@@ -9,9 +9,10 @@ export const connectDB = async () => {
             serverSelectionTimeoutMS: 5000, // Fail after 5 seconds if no connection
             socketTimeoutMS: 45000,
         });
-        logger.info('MongoDB Connected...');
+        console.log('✅ MongoDB Connected successfully.');
     } catch (err: any) {
-        logger.error('MongoDB connection error: ' + err.message);
-        process.exit(1);
+        console.error('❌ MongoDB connection error:', err.message);
+        // Do not exit immediately, let the main error handler catch it or exit after timeout
+        throw err;
     }
 };
