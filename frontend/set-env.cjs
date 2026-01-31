@@ -40,9 +40,13 @@ if (fs.existsSync(envPath)) {
 }
 
 // Override/Fallback with System Environment Variables (Critical for Vercel)
-if (process.env.VITE_GEMINI_API_KEY) apiKey = process.env.VITE_GEMINI_API_KEY;
+// Override/Fallback with System Environment Variables (Critical for Vercel)
+// We check multiple variations to be safe
 if (process.env.GEMINI_API_KEY) apiKey = process.env.GEMINI_API_KEY;
-if (process.env.VITE_API_URL) apiUrl = process.env.VITE_API_URL;
+else if (process.env.VITE_GEMINI_API_KEY) apiKey = process.env.VITE_GEMINI_API_KEY;
+
+if (process.env.API_URL) apiUrl = process.env.API_URL;
+else if (process.env.VITE_API_URL) apiUrl = process.env.VITE_API_URL;
 
 console.log('Resolved API URL:', apiUrl);
 console.log('Resolved API Key length:', apiKey ? apiKey.length : 0);
