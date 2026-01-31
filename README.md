@@ -2,8 +2,7 @@
 
 **TalentMatch AI** is a next-generation recruitment platform designed to modernize the hiring process. By leveraging Artificial Intelligence, it connects top talent with the right opportunities instantly, while providing recruiters with deep insights and automated tools to manage the pipeline efficiently.
 
-![Dashboard Preview](<img width="1891" height="787" alt="dashboard-ss" src="https://github.com/user-attachments/assets/3983aabf-07d3-4b07-bc4b-48e929ff3431" />
-) 
+![Dashboard Preview](<img width="1891" height="787" alt="dashboard-ss" src="https://github.com/user-attachments/assets/3983aabf-07d3-4b07-bc4b-48e929ff3431" />) 
 ---
 
 ## ✨ Key Features
