@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
 
-import { environment } from '../environments/environment';
+import { config } from '../config';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +10,7 @@ export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: environment.geminiApiKey });
+    this.ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
   }
 
   async findTopCandidates(jobDescription: any, candidates: any[], settings: any) {
@@ -28,7 +28,7 @@ export class GeminiService {
 
       CANDIDATE POOL:
       ${JSON.stringify(candidates.map(c => ({
-      id: c.id,
+      id: String(c.id),
       name: c.name,
       title: c.role,
       skills: c.skills,
@@ -43,13 +43,14 @@ export class GeminiService {
       OUTPUT FORMAT:
       [
         {
-          "candidateId": "exact_id_from_pool",
+          "candidateId": "exact_id_from_pool_as_string",
           "matchPercentage": 85,
-          "analysis": "1-sentence explanation...",
+          "analysis": "A concise explanation (approx 2 sentences) citing specific skills and experience that match the job.",
           "strengths": ["skill1", "skill2"]
         }
       ]
       
+      IMPORTANT: ensure 'analysis' field is NEVER empty. Always provide a reason.
       Strictly return ONLY valid JSON.
     `;
 

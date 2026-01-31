@@ -129,13 +129,13 @@ interface AIMatchResult {
                               <p class="text-sm text-slate-500 mb-2">{{ match.candidateDetails?.role }} • {{ match.candidateDetails?.experience }}</p>
                             </div>
                             <div class="flex flex-col items-end">
-                              <div class="text-2xl font-black text-green-600">{{ match.matchPercentage }}%</div>
+                              <div class="text-2xl font-black" [ngClass]="getScoreClass(match.matchPercentage)">{{ match.matchPercentage }}%</div>
                               <div class="text-xs font-bold text-slate-400 uppercase">Match Score</div>
                             </div>
                           </div>
 
                           <div class="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg border border-blue-100 mb-4">
-                            <span class="font-bold mr-1">AI Analysis:</span> {{ match.analysis }}
+                            <span class="font-bold mr-1">AI Analysis:</span> {{ match.analysis || 'No detailed analysis provided by AI.' }}
                           </div>
 
                           <div class="flex flex-wrap gap-2 mb-4">
@@ -281,6 +281,13 @@ export class JobMatchComponent {
 
   closeProfile() {
     this.selectedCandidateForView.set(null);
+  }
+
+  getScoreClass(score: number): string {
+    if (score >= 90) return 'text-green-600';
+    if (score >= 75) return 'text-blue-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-500';
   }
 
   async inviteToInterview(candidate: Candidate) {

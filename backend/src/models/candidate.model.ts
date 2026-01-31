@@ -1,23 +1,29 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICandidate extends Document {
-    user: mongoose.Types.ObjectId;
-    name: string;
+    user?: mongoose.Types.ObjectId; // Optional link to User account
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
     skills: string[];
     experience: number; // Years
-    email: string; // Added for notifications
-    status: 'pending' | 'interviewing' | 'hired' | 'rejected'; // Hiring status
-    institution: string; // Education/Source
+    status: 'pending' | 'interviewing' | 'hired' | 'rejected';
+    institution?: string;
     resumeUrl?: string;
     bio?: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const CandidateSchema: Schema = new Schema({
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    name: { type: String, required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phone: { type: String },
     status: { type: String, enum: ['pending', 'interviewing', 'hired', 'rejected'], default: 'pending' },
-    institution: { type: String, required: true },
+    institution: { type: String },
     skills: [{ type: String }],
     experience: { type: Number, default: 0 },
     resumeUrl: { type: String },

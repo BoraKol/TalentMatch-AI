@@ -15,9 +15,17 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+import apiRouter from './routes';
+import { inviteCandidate } from './controllers/custom.controller';
+
 app.use('/api/health', healthRoutes);
-app.use('/api/candidates', candidateRoutes);
 app.use('/api/analytics', analyticsRoutes);
+
+// Custom Routes (overrides generic if specific)
+app.post('/api/candidates/:id/invite', inviteCandidate);
+
+// Generic Resource Routes
+app.use('/api', apiRouter);
 
 // Error Handling Middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

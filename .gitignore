@@ -43,3 +43,6 @@ Thumbs.db
 
 # Backend Specific
 backend/dist/
+
+# Generated Config
+frontend/src/config.ts
