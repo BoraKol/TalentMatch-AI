@@ -8,6 +8,7 @@ export interface ICandidate extends Document {
     phone?: string;
     skills: string[];
     experience: number; // Years
+    currentTitle?: string;
     status: 'pending' | 'interviewing' | 'hired' | 'rejected';
     institution?: string;
     resumeUrl?: string;
@@ -21,6 +22,7 @@ const CandidateSchema: Schema = new Schema({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    currentTitle: { type: String, default: 'Open to Work' },
     phone: { type: String },
     status: { type: String, enum: ['pending', 'interviewing', 'hired', 'rejected'], default: 'pending' },
     institution: { type: String },

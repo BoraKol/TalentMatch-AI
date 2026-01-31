@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { config } from './config';
 import logger from './utils/logger';
 import healthRoutes from './routes/health.routes';
-import candidateRoutes from './routes/candidate.routes';
+
 import analyticsRoutes from './routes/analytics.routes';
 
 const app = express();

@@ -41,6 +41,7 @@ export class DataService {
       this.candidates = (data as any[]).map(c => ({
         ...c,
         id: c._id || c.id,
+        role: c.currentTitle || c.role || 'Job Candidate',
         // Ensure avatar has a fallback if missing from backend
         avatar: c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=random`
       }));

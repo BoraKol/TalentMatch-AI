@@ -16,7 +16,7 @@ export class BaseController<T extends Document> {
 
     getAll = async (req: Request, res: Response): Promise<void> => {
         try {
-            const results = await this.service.findAll(req.query);
+            const results = await this.service.findAll(req.query as any);
             res.status(200).json(results);
         } catch (error: any) {
             res.status(500).json({ message: error.message });

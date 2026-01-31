@@ -126,7 +126,11 @@ interface AIMatchResult {
                           <div class="flex justify-between items-start">
                             <div>
                               <h4 class="text-lg font-bold text-slate-800">{{ match.candidateDetails?.name }}</h4>
-                              <p class="text-sm text-slate-500 mb-2">{{ match.candidateDetails?.role }} • {{ match.candidateDetails?.experience }}</p>
+                              <p class="text-sm text-slate-500 mb-2">
+                                <span *ngIf="match.candidateDetails?.role" class="font-medium text-slate-700">{{ match.candidateDetails?.role }}</span>
+                                <span *ngIf="match.candidateDetails?.role && match.candidateDetails?.experience" class="mx-1">•</span>
+                                <span *ngIf="match.candidateDetails?.experience">{{ match.candidateDetails?.experience }} Years Exp</span>
+                              </p>
                             </div>
                             <div class="flex flex-col items-end">
                               <div class="text-2xl font-black" [ngClass]="getScoreClass(match.matchPercentage)">{{ match.matchPercentage }}%</div>
