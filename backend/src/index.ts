@@ -3,6 +3,8 @@ import { connectDB } from './config/database';
 import { config } from './config';
 import logger from './utils/logger';
 
+console.log('✅ Index.ts loaded, starting initialization...');
+
 const startServer = async () => {
     try {
         logger.info('Starting server initialization...');
