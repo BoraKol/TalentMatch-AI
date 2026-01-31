@@ -1,0 +1,5 @@
+{
+  "name": "TalentMatch AI",
+  "description": "AI-powered recruitment platform that eliminates the middleman by matching candidates directly to employers based on skills, bio, and algorithm settings.",
+  "requestFramePermissions": []
+}
