@@ -38,11 +38,13 @@ export const inviteCandidate = async (req: Request, res: Response) => {
         if (!candidate.email) {
             // Fallback for demo if data is missing email
             // return res.status(400).json({ message: 'Candidate does not have an email address' });
-            console.warn(`Candidate ${candidate.name} missing email. Using test address.`);
+            // @ts-ignore
+            console.warn(`Candidate ${candidate.firstName} ${candidate.lastName} missing email. Using test address.`);
+            // @ts-ignore
             candidate.email = 'test-candidate@ethereal.email';
         }
 
-        const info = await emailService.sendInterviewInvite(candidate.email, candidate.name, jobTitle || 'Open Position');
+        const info = await emailService.sendInterviewInvite(candidate.email, `${candidate.firstName} ${candidate.lastName}`, jobTitle || 'Open Position');
 
         res.status(200).json({ message: 'Invitation sent successfully', info });
     } catch (error: any) {

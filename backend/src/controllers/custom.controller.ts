@@ -15,6 +15,7 @@ export const inviteCandidate = async (req: Request, res: Response) => {
         }
 
         if (!candidate.email) {
+            // @ts-ignore
             console.warn(`Candidate ${candidate.firstName} ${candidate.lastName} missing email. Using test address.`);
             // @ts-ignore
             candidate.email = 'test-candidate@ethereal.email';
