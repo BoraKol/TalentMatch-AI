@@ -34,7 +34,7 @@ if (fs.existsSync(envPath)) {
             apiUrl = line.split('=')[1].trim().replace(/"/g, '').replace(/'/g, '');
         }
     }
-    }
+
 } else {
     console.warn(`${colors.yellow}Warning: .env.local file not found at ${envPath} (This is normal in CI/CD)${colors.reset}`);
 }
