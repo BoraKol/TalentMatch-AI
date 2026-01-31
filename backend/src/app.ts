@@ -17,12 +17,14 @@ app.use(express.json());
 // Routes
 import apiRouter from './routes';
 import { inviteCandidate } from './controllers/custom.controller';
+import { seedDatabase } from './controllers/seed.controller';
 
 app.use('/api/health', healthRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 // Custom Routes (overrides generic if specific)
 app.post('/api/candidates/:id/invite', inviteCandidate);
+app.get('/api/seed', seedDatabase);
 
 // Generic Resource Routes
 app.use('/api', apiRouter);
