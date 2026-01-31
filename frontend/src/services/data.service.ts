@@ -38,13 +38,17 @@ export class DataService {
       const data = await firstValueFrom(this.apiService.getCandidates());
       // Map backend structure and assign
       // We map _id to id to ensure compatibility with frontend components and Gemini service
-      this.candidates = (data as any[]).map(c => ({
-        ...c,
-        id: c._id || c.id,
-        role: c.currentTitle || c.role || 'Job Candidate',
-        // Ensure avatar has a fallback if missing from backend
-        avatar: c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=random`
-      }));
+      this.candidates = (data as any[]).map(c => {
+        const fullName = c.name || `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unknown Candidate';
+        return {
+          ...c,
+          id: c._id || c.id,
+          name: fullName,
+          role: c.currentTitle || c.role || 'Job Candidate',
+          // Ensure avatar has a fallback if missing from backend
+          avatar: c.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`
+        };
+      });
       console.log('Candidates loaded from API:', data);
     } catch (e) {
       console.error('Failed to load candidates', e);
