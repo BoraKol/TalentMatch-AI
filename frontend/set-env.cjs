@@ -34,9 +34,19 @@ if (fs.existsSync(envPath)) {
             apiUrl = line.split('=')[1].trim().replace(/"/g, '').replace(/'/g, '');
         }
     }
+    }
 } else {
-    console.warn(`${colors.yellow}Warning: .env.local file not found at ${envPath}${colors.reset}`);
+    console.warn(`${colors.yellow}Warning: .env.local file not found at ${envPath} (This is normal in CI/CD)${colors.reset}`);
 }
+
+// Override/Fallback with System Environment Variables (Critical for Vercel)
+if (process.env.VITE_GEMINI_API_KEY) apiKey = process.env.VITE_GEMINI_API_KEY;
+if (process.env.GEMINI_API_KEY) apiKey = process.env.GEMINI_API_KEY;
+if (process.env.VITE_API_URL) apiUrl = process.env.VITE_API_URL;
+
+console.log('Resolved API URL:', apiUrl);
+console.log('Resolved API Key length:', apiKey ? apiKey.length : 0);
+
 
 if (!apiKey) {
     console.error(`${colors.red}Error: GEMINI_API_KEY or VITE_GEMINI_API_KEY not found in .env.local${colors.reset}`);
