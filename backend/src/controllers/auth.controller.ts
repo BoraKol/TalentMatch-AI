@@ -1,0 +1,131 @@
+import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import User, { IUser } from '../models/user.model';
+import Candidate from '../models/candidate.model';
+import { config } from '../config';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+
+export class AuthController {
+
+    // Login for all roles
+    async login(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password } = req.body;
+
+            // Check User
+            const user = await User.findOne({ email });
+            if (!user) {
+                res.status(401).json({ error: 'Invalid credentials' });
+                return;
+            }
+
+            // Check Active
+            if (!user.isActive) {
+                res.status(403).json({ error: 'Account is inactive. Please contact admin or check email.' });
+                return;
+            }
+
+            // Verify Password
+            const isMatch = await bcrypt.compare(password, user.password || '');
+            if (!isMatch) {
+                res.status(401).json({ error: 'Invalid credentials' });
+                return;
+            }
+
+            // Generate Token
+            const token = jwt.sign(
+                { id: user._id, email: user.email, role: user.role },
+                JWT_SECRET,
+                { expiresIn: '1d' }
+            );
+
+            res.json({
+                token,
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role
+                }
+            });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Register Candidate (Public)
+    async registerCandidate(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password, firstName, lastName, region, country, school, department, skills } = req.body;
+
+            // Check existing
+            const existing = await User.findOne({ email });
+            if (existing) {
+                res.status(400).json({ error: 'Email already exists' });
+                return;
+            }
+
+            // Hash Password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Create User
+            const user = await User.create({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role: 'candidate',
+                isActive: true
+            });
+
+            // Create Candidate Profile
+            await Candidate.create({
+                user: user._id,
+                firstName,
+                lastName,
+                email,
+                region,
+                country,
+                school,
+                department,
+                skills: skills || []
+            });
+
+            // Auto-Login or just success
+            res.status(201).json({ message: 'Candidate registered successfully' });
+
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // Set Password (for Invitation flow: Institution Admin, Recruiter)
+    async setPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password, inviteToken } = req.body;
+            // In a real app, inviteToken would be verified against DB or JWT
+
+            const user = await User.findOne({ email });
+            if (!user) {
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(password, 10);
+            user.password = hashedPassword;
+            user.isActive = true;
+            await user.save();
+
+            res.json({ message: 'Password set successfully. You can now login.' });
+
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+}
+
+export const authController = new AuthController();

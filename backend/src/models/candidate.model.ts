@@ -25,7 +25,12 @@ const CandidateSchema: Schema = new Schema({
     currentTitle: { type: String, default: 'Open to Work' },
     phone: { type: String },
     status: { type: String, enum: ['pending', 'interviewing', 'hired', 'rejected'], default: 'pending' },
-    institution: { type: String },
+    institution: { type: String }, // Keeping for backwards compatibility
+    school: { type: String }, // ID or Name from School model
+    department: { type: String },
+    program: { type: String },
+    region: { type: String },
+    country: { type: String },
     skills: [{ type: String }],
     experience: { type: Number, default: 0 },
     resumeUrl: { type: String },

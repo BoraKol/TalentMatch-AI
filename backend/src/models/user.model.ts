@@ -17,7 +17,7 @@ const UserSchema: Schema = new Schema({
     firstName: { type: String },
     lastName: { type: String },
     isActive: { type: Boolean, default: true },
-    role: { type: String, enum: ['admin', 'recruiter', 'candidate', 'referrer'], default: 'candidate' },
+    role: { type: String, enum: ['super_admin', 'institution_admin', 'recruiter', 'candidate', 'referrer'], default: 'candidate' },
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

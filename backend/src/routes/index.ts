@@ -1,24 +1,20 @@
 import { Router } from 'express';
-import { createResourceRouter } from './resource.router';
-import {
-    userController, candidateController, employerController, referralPersonController,
-    institutionController, schoolController, departmentController, programController,
-    employerReferralInvitationController, candidateReferralInvitationController, notificationController
-} from '../controllers';
+import candidateRoutes from './candidate.routes';
+import jobRoutes from './job.routes';
+import userRoutes from './user.routes';
+import institutionRoutes from './institution.routes';
+import testimonialRoutes from './testimonial.routes';
+import settingsRoutes from './settings.routes';
+import authRoutes from './auth.routes';
 
 const router = Router();
 
-// Register all resource routes
-router.use('/users', createResourceRouter(userController));
-router.use('/candidates', createResourceRouter(candidateController));
-router.use('/referralpersons', createResourceRouter(referralPersonController));
-router.use('/employers', createResourceRouter(employerController));
-router.use('/institutions', createResourceRouter(institutionController));
-router.use('/schools', createResourceRouter(schoolController));
-router.use('/departments', createResourceRouter(departmentController));
-router.use('/programs', createResourceRouter(programController));
-router.use('/invite_employers_referrals', createResourceRouter(employerReferralInvitationController));
-router.use('/candidateinvitations', createResourceRouter(candidateReferralInvitationController));
-router.use('/notifications', createResourceRouter(notificationController));
+router.use('/auth', authRoutes);
+router.use('/candidates', candidateRoutes);
+router.use('/jobs', jobRoutes);
+router.use('/users', userRoutes);
+router.use('/institutions', institutionRoutes);
+router.use('/testimonials', testimonialRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;
