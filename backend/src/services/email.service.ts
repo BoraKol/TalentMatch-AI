@@ -13,7 +13,11 @@ export class EmailService {
                 auth: {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS
-                }
+                },
+                // Timeouts to prevent hanging
+                connectionTimeout: 5000, // 5 seconds
+                greetingTimeout: 5000,   // 5 seconds
+                socketTimeout: 10000,    // 10 seconds
             });
             console.log(`📧 Email Service: Configured with SMTP (${process.env.SMTP_HOST})`);
         } else {
