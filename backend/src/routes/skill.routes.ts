@@ -5,10 +5,13 @@ const router = Router();
 // Skills Resource
 import Skill from '../models/skill.model';
 
-// GET all skills
+// GET all skills (Default: Active only, ?includeInactive=true for all)
 router.get('/', async (req, res) => {
     try {
-        const skills = await Skill.find().sort({ createdAt: -1 });
+        const includeInactive = req.query.includeInactive === 'true';
+        const query = includeInactive ? {} : { isActive: true };
+
+        const skills = await Skill.find(query).sort({ createdAt: -1 });
         res.json(skills);
     } catch (error: any) {
         res.status(500).json({ error: error.message });

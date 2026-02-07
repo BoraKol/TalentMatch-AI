@@ -114,7 +114,7 @@ export class SkillsListComponent implements OnInit {
   }
 
   loadSkills() {
-    this.http.get<Skill[]>(`${environment.apiUrl}/skills`).subscribe({
+    this.http.get<Skill[]>(`${environment.apiUrl}/skills?includeInactive=true`).subscribe({
       next: (data) => this.skills.set(data),
       error: (err) => console.error('Failed to load skills', err)
     });
