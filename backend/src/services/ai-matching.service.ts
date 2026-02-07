@@ -223,40 +223,49 @@ IMPORTANT:
     async findTopJobsForCandidate(candidateId: string): Promise<any> {
         console.log(`🔍 AI Matching: Finding top jobs for candidate: ${candidateId}`);
 
-        const candidate = await Candidate.findById(candidateId);
-        if (!candidate) throw new Error('Candidate not found');
+        try {
+            const candidate = await Candidate.findById(candidateId);
+            if (!candidate) {
+                console.warn(`⚠️ AI Matching: Candidate not found (ID: ${candidateId})`);
+                return []; // Return empty instead of throwing to avoid 500 crash if ID is weird
+            }
 
-        const jobs = await Job.find().lean();
-        if (jobs.length === 0) return [];
+            const jobs = await Job.find().lean();
+            if (jobs.length === 0) return [];
 
-        // Prepare data for AI
-        const jobsForAI = jobs.map(j => ({
-            id: j._id.toString(),
-            title: j.title,
-            company: j.company,
-            description: j.description,
-            requiredSkills: j.requiredSkills || [],
-            location: j.location,
-            type: j.employmentType
-        }));
+            // Prepare data for AI
+            const jobsForAI = jobs.map(j => ({
+                id: j._id.toString(),
+                title: j.title,
+                company: j.company,
+                description: j.description,
+                requiredSkills: j.requiredSkills || [],
+                location: j.location,
+                type: j.employmentType
+            }));
 
-        // Fetch settings for Job matching too
-        const AppSetting = require('../models/app-setting.model').default;
-        const settings = await AppSetting.find({ key: { $regex: 'Algorithm.*' } });
-        let algorithmContext = "";
-        if (settings.length > 0) {
-            const settingMap = settings.reduce((acc: any, curr: any) => {
-                acc[curr.value.slug] = curr.value.fieldValue;
-                return acc;
-            }, {});
-            algorithmContext = `
-            PRIORITIZATION RULES (0-10 Scale):
-            - Skill Match: ${settingMap['primary_skills'] || 10}/10
-            - Experience/Secondary: ${settingMap['secondary_skills'] || 5}/10
-            `;
-        }
+            // Fetch settings for Job matching too
+            const AppSetting = require('../models/app-setting.model').default;
+            let algorithmContext = "";
 
-        const prompt = `
+            try {
+                const settings = await AppSetting.find({ key: { $regex: 'Algorithm.*' } });
+                if (settings && settings.length > 0) {
+                    const settingMap = settings.reduce((acc: any, curr: any) => {
+                        acc[curr.value.slug] = curr.value.fieldValue;
+                        return acc;
+                    }, {});
+                    algorithmContext = `
+                    PRIORITIZATION RULES (0-10 Scale):
+                    - Skill Match: ${settingMap['primary_skills'] || 10}/10
+                    - Experience/Secondary: ${settingMap['secondary_skills'] || 5}/10
+                    `;
+                }
+            } catch (settingsError) {
+                console.warn('⚠️ AI Matching: Failed to load algorithm settings, using defaults.', settingsError);
+            }
+
+            const prompt = `
 You are an expert Career Coach and AI Job Matcher.
 The Admin has set the following priorities:
 ${algorithmContext}
@@ -285,40 +294,50 @@ OUTPUT FORMAT (strict JSON):
 ]
 `;
 
-        try {
-            if (!this.genAI) throw new Error('Gemini API not initialized');
-
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-            const result = await model.generateContent(prompt);
-            const response = result.response;
-            const text = response.text();
-
-            let aiMatches: any[] = [];
             try {
-                const jsonMatch = text.match(/\[[\s\S]*\]/);
-                if (jsonMatch) aiMatches = JSON.parse(jsonMatch[0]);
-            } catch (e) {
-                console.error('Failed to parse AI response', e);
-                return [];
+                if (!this.genAI) throw new Error('Gemini API not initialized');
+
+                const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+                const result = await model.generateContent(prompt);
+                const response = result.response;
+                const text = response.text();
+
+                let aiMatches: any[] = [];
+                try {
+                    const jsonMatch = text.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) aiMatches = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.error('Failed to parse AI response', e);
+                    // Fallback to quick match if AI response is garbage
+                    throw new Error('Invalid AI Response');
+                }
+
+                if (!Array.isArray(aiMatches) || aiMatches.length === 0) {
+                    throw new Error('Empty AI Response');
+                }
+
+                // Enrich
+                const enriched = aiMatches.map(match => {
+                    const job = jobs.find(j => j._id.toString() === match.jobId);
+                    if (!job) return null;
+                    return {
+                        ...job,
+                        matchScore: match.matchScore,
+                        aiAnalysis: match.reason
+                    };
+                }).filter(Boolean).slice(0, 3);
+
+                return enriched;
+
+            } catch (aiError) {
+                console.error('AI Job Matching Failed (Gemini), falling back to Quick Match:', aiError);
+                return this.quickJobMatch(candidate, jobs);
             }
 
-            // Enrich
-            const enriched = aiMatches.map(match => {
-                const job = jobs.find(j => j._id.toString() === match.jobId);
-                if (!job) return null;
-                return {
-                    ...job,
-                    matchScore: match.matchScore,
-                    aiAnalysis: match.reason
-                };
-            }).filter(Boolean).slice(0, 3);
-
-            return enriched;
-
-        } catch (error) {
-            console.error('AI Job Matching Error:', error);
-            // Fallback: simple skill match
-            return this.quickJobMatch(candidate, jobs);
+        } catch (fatalError: any) {
+            console.error('🔥 AI Matching FATAL Error:', fatalError);
+            // Even in fatal error, try to return empty array or fallback if possible, but at least don't crash 500
+            return [];
         }
     }
 
