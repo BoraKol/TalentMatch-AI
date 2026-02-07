@@ -1,46 +1,91 @@
 import nodemailer from 'nodemailer';
 
 export class EmailService {
-    private transporter: nodemailer.Transporter;
+    private transporter: nodemailer.Transporter | null = null;
 
     constructor() {
-        // Initialize with Environment Variables or Fallback to Ethereal
-        this.transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-            port: parseInt(process.env.SMTP_PORT || '587'),
-            auth: {
-                user: process.env.SMTP_USER || 'ethereal_user',
-                pass: process.env.SMTP_PASS || 'ethereal_pass'
-            }
-        });
-
-        // If no env vars, generate a test account for demo purposes
-        if (!process.env.SMTP_HOST) {
-            this.createTestAccount();
+        // Initialize with Environment Variables if present
+        if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+            this.transporter = nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: parseInt(process.env.SMTP_PORT || '587'),
+                secure: process.env.SMTP_SECURE === 'true',
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS
+                }
+            });
+            console.log(`📧 Email Service: Configured with SMTP (${process.env.SMTP_HOST})`);
+        } else {
+            console.log('⚠️ Email Service: No SMTP configuration found. Emails will be MOCKED (logged to console).');
+            this.transporter = null;
         }
     }
 
-    private async createTestAccount() {
+    async sendContactEmail(options: {
+        to: string;
+        candidateName: string;
+        subject: string;
+        message: string;
+        senderName: string;
+        senderEmail: string;
+        companyName: string;
+        jobTitle: string;
+    }) {
+        console.log(`📧 Preparing to send email to ${options.to}`);
+
+        // MOCK MODE: If no transporter, simply log and return success
+        if (!this.transporter) {
+            console.log('---------------------------------------------------');
+            console.log('📧 [MOCK EMAIL SENT]');
+            console.log(`To: ${options.to}`);
+            console.log(`Subject: ${options.subject}`);
+            console.log(`From: ${options.senderName} (${options.senderEmail})`);
+            console.log(`Message: \n${options.message}`);
+            console.log('---------------------------------------------------');
+            return { messageId: 'mock-id-' + Date.now() };
+        }
+
         try {
-            const testAccount = await nodemailer.createTestAccount();
-            this.transporter = nodemailer.createTransport({
-                host: 'smtp.ethereal.email',
-                port: 587,
-                secure: false,
-                auth: {
-                    user: testAccount.user,
-                    pass: testAccount.pass
-                }
+            const info = await this.transporter.sendMail({
+                from: `"${options.companyName}" <${process.env.SMTP_USER || 'noreply@talentmatch.ai'}>`,
+                to: options.to,
+                replyTo: options.senderEmail,
+                subject: options.subject,
+                text: `Hello ${options.candidateName},\n\n${options.message}\n\n---\nSent via TalentMatch AI\n${options.senderName} | ${options.companyName}`,
+                html: `
+                    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 20px;">
+                        <h2 style="color: #0f172a;">New Message from ${options.companyName}</h2>
+                        <p><strong>RE: ${options.jobTitle}</strong></p>
+                        <hr style="border: 1px solid #e2e8f0; margin: 20px 0;">
+                        <p style="white-space: pre-wrap; color: #334155;">${options.message}</p>
+                        <br>
+                        <p style="color: #64748b; font-size: 14px;">Reply directly to this email to contact <strong>${options.senderName}</strong> (${options.senderEmail}).</p>
+                    </div>
+                `
             });
-            console.log('📧 Ethereal Test Email Account Created');
-            console.log(`📧 User: ${testAccount.user}`);
-            console.log(`📧 Pass: ${testAccount.pass}`);
-        } catch (err) {
-            console.error('Failed to create Ethereal account', err);
+
+            console.log(`📧 Email sent: ${info.messageId}`);
+            return info;
+        } catch (error) {
+            console.error('❌ Error sending contact email:', error);
+            throw error; // Let the controller handle the error if real sending fails
         }
     }
 
     async sendInterviewInvite(to: string, candidateName: string, jobTitle: string) {
+        console.log(`📧 Preparing to send interview invite to ${to}`);
+
+        // MOCK MODE
+        if (!this.transporter) {
+            console.log('---------------------------------------------------');
+            console.log('📧 [MOCK EMAIL SENT - INTERVIEW INVITE]');
+            console.log(`To: ${to}`);
+            console.log(`Subject: Interview Invitation: ${jobTitle}`);
+            console.log('---------------------------------------------------');
+            return { messageId: 'mock-id-' + Date.now() };
+        }
+
         try {
             const info = await this.transporter.sendMail({
                 from: '"TalentMatch AI" <recruit@talentmatch.ai>',
@@ -68,72 +113,6 @@ export class EmailService {
             return info;
         } catch (error) {
             console.error('Error sending email:', error);
-            throw error;
-        }
-    }
-
-    async sendContactEmail(options: {
-        to: string;
-        candidateName: string;
-        subject: string;
-        message: string;
-        senderName: string;
-        senderEmail: string;
-        companyName: string;
-        jobTitle: string;
-    }) {
-        try {
-            const info = await this.transporter.sendMail({
-                from: `"${options.companyName}" <recruit@talentmatch.ai>`,
-                to: options.to,
-                replyTo: options.senderEmail,
-                subject: options.subject,
-                text: `Hello ${options.candidateName},\n\n${options.message}\n\n---\nSent via TalentMatch AI\n${options.senderName} | ${options.companyName}`,
-                html: `
-                    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 20px;">
-                        <div style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); padding: 24px; border-radius: 12px 12px 0 0;">
-                            <h1 style="color: white; margin: 0; font-size: 24px;">🤝 You've Been Contacted!</h1>
-                        </div>
-                        <div style="background: white; padding: 24px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            <p style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Hello,</p>
-                            <p style="color: #1e293b; font-size: 18px; font-weight: 600; margin-top: 0;">${options.candidateName}</p>
-                            
-                            <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #10b981;">
-                                <p style="color: #475569; margin: 0; white-space: pre-wrap;">${options.message}</p>
-                            </div>
-
-                            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                                <p style="color: #64748b; font-size: 12px; margin-bottom: 8px;">REGARDING POSITION</p>
-                                <p style="color: #1e293b; font-size: 16px; font-weight: 600; margin: 0;">${options.jobTitle}</p>
-                            </div>
-
-                            <div style="margin-top: 16px; padding: 16px; background: #f8fafc; border-radius: 8px;">
-                                <p style="color: #64748b; font-size: 12px; margin: 0 0 4px 0;">FROM</p>
-                                <p style="color: #1e293b; font-weight: 600; margin: 0;">${options.senderName}</p>
-                                <p style="color: #10b981; margin: 4px 0 0 0;">${options.companyName}</p>
-                                <a href="mailto:${options.senderEmail}" style="color: #2563eb; text-decoration: none; font-size: 14px;">${options.senderEmail}</a>
-                            </div>
-
-                            <a href="mailto:${options.senderEmail}?subject=Re: ${options.subject}" 
-                               style="display: block; text-align: center; background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px;">
-                                Reply to ${options.senderName}
-                            </a>
-                        </div>
-                        <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">
-                            Sent via TalentMatch AI • AI-Powered Recruitment Platform
-                        </p>
-                    </div>
-                `
-            });
-
-            console.log(`📧 Contact email sent: ${info.messageId}`);
-            if (nodemailer.getTestMessageUrl(info)) {
-                console.log(`📧 Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
-                return { messageId: info.messageId, previewUrl: nodemailer.getTestMessageUrl(info) };
-            }
-            return { messageId: info.messageId };
-        } catch (error) {
-            console.error('Error sending contact email:', error);
             throw error;
         }
     }
