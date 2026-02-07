@@ -6,7 +6,8 @@ export interface IUser extends Document {
     firstName?: string;
     lastName?: string;
     isActive: boolean;
-    role: 'admin' | 'recruiter' | 'candidate' | 'referrer';
+    role: 'super_admin' | 'institution_admin' | 'candidate';
+    institution?: any; // ObjectId
     createdAt: Date;
     updatedAt: Date;
 }
@@ -17,7 +18,8 @@ const UserSchema: Schema = new Schema({
     firstName: { type: String },
     lastName: { type: String },
     isActive: { type: Boolean, default: true },
-    role: { type: String, enum: ['super_admin', 'institution_admin', 'recruiter', 'candidate', 'referrer'], default: 'candidate' },
+    role: { type: String, enum: ['super_admin', 'institution_admin', 'candidate'], default: 'candidate' },
+    institution: { type: Schema.Types.ObjectId, ref: 'Institution' }
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

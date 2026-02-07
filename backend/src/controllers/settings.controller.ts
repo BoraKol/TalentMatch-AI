@@ -17,6 +17,26 @@ export const addSkill = async (req: Request, res: Response) => {
     } catch (err: any) { res.status(400).json({ error: err.message }); }
 };
 
+export const getSkillById = async (req: Request, res: Response) => {
+    try {
+        const skill = await Skill.findById(req.params.id);
+        if (!skill) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        res.json(skill);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+};
+
+export const updateSkill = async (req: Request, res: Response) => {
+    try {
+        const skill = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!skill) {
+            return res.status(404).json({ error: 'Skill not found' });
+        }
+        res.json(skill);
+    } catch (err: any) { res.status(400).json({ error: err.message }); }
+};
+
 export const getEmploymentTypes = async (req: Request, res: Response) => {
     try {
         const types = await EmploymentType.find({ isActive: true });
@@ -31,21 +51,52 @@ export const addEmploymentType = async (req: Request, res: Response) => {
     } catch (err: any) { res.status(400).json({ error: err.message }); }
 };
 
+export const getEmploymentTypeById = async (req: Request, res: Response) => {
+    try {
+        const type = await EmploymentType.findById(req.params.id);
+        if (!type) {
+            return res.status(404).json({ error: 'Employment type not found' });
+        }
+        res.json(type);
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+};
+
+export const updateEmploymentType = async (req: Request, res: Response) => {
+    try {
+        const type = await EmploymentType.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!type) {
+            return res.status(404).json({ error: 'Employment type not found' });
+        }
+        res.json(type);
+    } catch (err: any) { res.status(400).json({ error: err.message }); }
+};
+
 export const getAlgorithmSettings = async (req: Request, res: Response) => {
     try {
         // Find specific settings keys or return all
         const settings = await AppSetting.find({ key: { $regex: 'Algorithm.*' } });
-        res.json(settings);
+        // Return only the value part which contains the actual setting object
+        res.json(settings.map(s => s.value));
     } catch (err: any) { res.status(500).json({ error: err.message }); }
 };
 
 export const updateAlgorithmSettings = async (req: Request, res: Response) => {
     try {
-        const updates = req.body; // Expect array of { key, value } or object
-        // Implementation for bulk update or single update
-        // For simplicity assuming single update for now or simple key-value body
-        for (const [key, value] of Object.entries(updates)) {
-            await AppSetting.findOneAndUpdate({ key }, { value, key }, { upsert: true, new: true });
+        const { settings } = req.body;
+
+        if (!settings || !Array.isArray(settings)) {
+            return res.status(400).json({ error: 'Invalid settings format' });
+        }
+
+        for (const setting of settings) {
+            await AppSetting.findOneAndUpdate(
+                { key: `Algorithm.${setting.slug}` },
+                {
+                    key: `Algorithm.${setting.slug}`,
+                    value: setting
+                },
+                { upsert: true, new: true }
+            );
         }
         res.json({ message: 'Settings updated' });
     } catch (err: any) { res.status(400).json({ error: err.message }); }

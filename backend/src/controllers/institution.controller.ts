@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
+import { BaseController } from './base.controller';
+import { institutionService } from '../services/institution.service';
 import Institution from '../models/institution.model';
 import User from '../models/user.model';
-import { BaseController } from './base.controller';
-import nodemailer from 'nodemailer'; // For invites
+import nodemailer from 'nodemailer';
 import { config } from '../config';
 
 export class InstitutionController extends BaseController<any> {
     constructor() {
-        super(Institution);
+        super(institutionService);
     }
 
     // Override create to handle Admin Invite logic
-    async create(req: Request, res: Response): Promise<void> {
+    create = async (req: Request, res: Response): Promise<void> => {
         try {
             const { name, emailDomain, adminEmail } = req.body;
 

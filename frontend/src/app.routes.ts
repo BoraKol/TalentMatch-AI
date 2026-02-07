@@ -1,33 +1,145 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './components/dashboard.component';
-import { JobMatchComponent } from './components/job-match.component';
-import { SettingsComponent } from './components/settings.component';
 import { LoginComponent } from './components/auth/login.component';
 import { RegisterCandidateComponent } from './components/auth/register-candidate.component';
-import { inject } from '@angular/core';
-import { AuthService } from './services/auth.service';
-
-// Simple Auth Guard
-const authGuard = () => {
-    const authService = inject(AuthService);
-    if (authService.isAuthenticated()) {
-        return true;
-    }
-    // Redirect to login handled in component or here
-    return false; // ideally redirect
-};
+import { RegisterEmployerComponent } from './components/auth/register-employer.component';
+import { AdminLayoutComponent } from './components/admin/admin-layout.component';
+import { AdminDashboardComponent } from './components/admin/admin-dashboard.component';
+import { superAdminGuard, candidateGuard, employerGuard } from './guards/auth.guard';
 
 export class AppRoutes {
     static routes: Routes = [
-        { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+        { path: '', redirectTo: 'login', pathMatch: 'full' },
         { path: 'login', component: LoginComponent },
         { path: 'register/candidate', component: RegisterCandidateComponent },
+        { path: 'register/employer', component: RegisterEmployerComponent },
+
+        // Candidate Routes (Protected)
         {
-            path: 'dashboard',
-            component: DashboardComponent,
-            // canActivate: [authGuard] // Enable later
+            path: 'candidate',
+            canActivate: [candidateGuard],
+            children: [
+                { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+                {
+                    path: 'dashboard',
+                    loadComponent: () => import('./components/candidate/candidate-dashboard.component').then(m => m.CandidateDashboardComponent)
+                },
+                {
+                    path: 'profile/edit',
+                    loadComponent: () => import('./components/candidate/candidate-profile-edit.component').then(m => m.CandidateProfileEditComponent)
+                }
+            ]
         },
-        { path: 'match', component: JobMatchComponent },
-        { path: 'settings', component: SettingsComponent }
+
+        // Employer Routes (Protected)
+        {
+            path: 'employer',
+            canActivate: [employerGuard],
+            children: [
+                { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+                {
+                    path: 'dashboard',
+                    loadComponent: () => import('./components/employer/employer-dashboard.component').then(m => m.EmployerDashboardComponent)
+                },
+                {
+                    path: 'jobs/new',
+                    loadComponent: () => import('./components/employer/job-post.component').then(m => m.JobPostComponent)
+                },
+                {
+                    path: 'jobs/:jobId/matches',
+                    loadComponent: () => import('./components/employer/ai-match-results.component').then(m => m.AiMatchResultsComponent)
+                },
+                {
+                    path: 'candidates/:candidateId',
+                    loadComponent: () => import('./components/employer/candidate-profile.component').then(m => m.CandidateProfileComponent)
+                }
+            ]
+        },
+
+        // Admin Routes (Protected)
+        {
+            path: 'admin',
+            component: AdminLayoutComponent,
+            canActivate: [superAdminGuard],
+            children: [
+                { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+                { path: 'dashboard', component: AdminDashboardComponent },
+                {
+                    path: 'institutions',
+                    children: [
+                        { path: '', redirectTo: 'list', pathMatch: 'full' },
+                        {
+                            path: 'list',
+                            loadComponent: () => import('./components/admin/institutions/institution-list.component').then(m => m.InstitutionListComponent)
+                        },
+                        {
+                            path: 'create',
+                            loadComponent: () => import('./components/admin/institutions/institution-create.component').then(m => m.InstitutionCreateComponent)
+                        },
+                        {
+                            path: 'edit/:id',
+                            loadComponent: () => import('./components/admin/institutions/institution-create.component').then(m => m.InstitutionCreateComponent)
+                        }
+                    ]
+                },
+                {
+                    path: 'testimonials',
+                    children: [
+                        { path: '', redirectTo: 'list', pathMatch: 'full' },
+                        {
+                            path: 'list',
+                            loadComponent: () => import('./components/admin/testimonials/testimonial-list.component').then(m => m.TestimonialListComponent)
+                        },
+                        {
+                            path: 'create',
+                            loadComponent: () => import('./components/admin/testimonials/testimonial-create.component').then(m => m.TestimonialCreateComponent)
+                        },
+                        {
+                            path: 'edit/:id',
+                            loadComponent: () => import('./components/admin/testimonials/testimonial-create.component').then(m => m.TestimonialCreateComponent)
+                        }
+                    ]
+                },
+                {
+                    path: 'settings',
+                    children: [
+                        { path: '', redirectTo: 'algorithm', pathMatch: 'full' },
+                        {
+                            path: 'algorithm',
+                            loadComponent: () => import('./components/admin/settings/algorithm-settings.component').then(m => m.AlgorithmSettingsComponent)
+                        },
+                        {
+                            path: 'employment-types',
+                            loadComponent: () => import('./components/admin/settings/employment-types-list.component').then(m => m.EmploymentTypesListComponent)
+                        },
+                        {
+                            path: 'employment-types/create',
+                            loadComponent: () => import('./components/admin/settings/employment-type-create.component').then(m => m.EmploymentTypeCreateComponent)
+                        },
+                        {
+                            path: 'employment-types/edit/:id',
+                            loadComponent: () => import('./components/admin/settings/employment-type-create.component').then(m => m.EmploymentTypeCreateComponent)
+                        },
+                        {
+                            path: 'skills',
+                            loadComponent: () => import('./components/admin/settings/skills-list.component').then(m => m.SkillsListComponent)
+                        },
+                        {
+                            path: 'skills/create',
+                            loadComponent: () => import('./components/admin/settings/skill-create.component').then(m => m.SkillCreateComponent)
+                        },
+                        {
+                            path: 'skills/edit/:id',
+                            loadComponent: () => import('./components/admin/settings/skill-create.component').then(m => m.SkillCreateComponent)
+                        }
+                    ]
+                }
+            ]
+        },
+
+        // Legacy routes redirect to admin
+        { path: 'dashboard', redirectTo: 'admin/dashboard', pathMatch: 'full' },
+        { path: 'institutions', redirectTo: 'admin/institutions/list', pathMatch: 'full' },
+        { path: 'settings', redirectTo: 'admin/settings/algorithm', pathMatch: 'full' }
     ];
 }
+

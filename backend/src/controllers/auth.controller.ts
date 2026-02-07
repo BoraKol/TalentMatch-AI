@@ -41,6 +41,9 @@ export class AuthController {
                 { expiresIn: '1d' }
             );
 
+            // Populate institution details if available
+            await user.populate('institution');
+
             res.json({
                 token,
                 user: {
@@ -48,7 +51,9 @@ export class AuthController {
                     email: user.email,
                     firstName: user.firstName,
                     lastName: user.lastName,
-                    role: user.role
+                    role: user.role,
+                    // @ts-ignore
+                    companyName: user.institution?.name
                 }
             });
         } catch (error: any) {
@@ -98,6 +103,58 @@ export class AuthController {
             res.status(201).json({ message: 'Candidate registered successfully' });
 
         } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // Register Employer (Institution Admin)
+    async registerEmployer(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password, firstName, lastName, companyName, companyWebsite, companyType } = req.body;
+
+            // Check existing User
+            const existing = await User.findOne({ email });
+            if (existing) {
+                res.status(400).json({ error: 'Email already exists' });
+                return;
+            }
+
+            // Hash Password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Extract email domain
+            const emailDomain = email.split('@')[1];
+
+            // Check if institution with this domain already exists
+            const Institution = require('../models/institution.model').default;
+            let institution = await Institution.findOne({ emailDomain });
+
+            // If institution doesn't exist, create a new one
+            if (!institution) {
+                institution = await Institution.create({
+                    name: companyName,
+                    type: companyType || 'Corporate',
+                    emailDomain,
+                    adminEmail: email,
+                    website: companyWebsite,
+                    status: 'active'
+                });
+            }
+
+            // Create User
+            const user = await User.create({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role: 'institution_admin',
+                isActive: true,
+                institution: institution._id
+            });
+
+            res.status(201).json({ message: 'Employer registered successfully', institutionId: institution._id });
+        } catch (error: any) {
+            console.error('Register Employer Error:', error);
             res.status(400).json({ error: error.message });
         }
     }

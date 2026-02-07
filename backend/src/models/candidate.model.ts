@@ -11,6 +11,11 @@ export interface ICandidate extends Document {
     currentTitle?: string;
     status: 'pending' | 'interviewing' | 'hired' | 'rejected';
     institution?: string;
+    school?: string;
+    department?: string;
+    program?: string;
+    region?: string;
+    country?: string;
     resumeUrl?: string;
     bio?: string;
     createdAt: Date;

@@ -1,13 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AnalyticsComponent } from './analytics.component';
 
 @Component({
-    selector: 'app-dashboard',
-    standalone: true,
-    imports: [CommonModule, AnalyticsComponent],
-    template: `
+  selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule, AnalyticsComponent, RouterModule],
+  template: `
     <div class="p-8">
       <h1 class="text-3xl font-bold text-slate-800 mb-6">Welcome Back, Super Admin</h1>
       
@@ -32,9 +32,17 @@ import { AnalyticsComponent } from './analytics.component';
           <p class="max-w-xl text-blue-100 mb-6">
             Our new feature analyzes candidate bios, experience, and soft skills to instantly invite the top 3 matches to interview.
           </p>
-          <button (click)="navigateToMatch()" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-50 transition-colors">
-            Try AI Matching Now
-          </button>
+          <div class="flex gap-4">
+              <button (click)="navigateToMatch()" class="bg-white text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-50 transition-colors">
+                Try AI Matching
+              </button>
+               <button [routerLink]="['/institutions']" class="bg-blue-700 text-white border border-blue-400 px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition-colors">
+                Manage Institutions
+              </button>
+              <button [routerLink]="['/settings']" class="bg-blue-700 text-white border border-blue-400 px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition-colors">
+                Platform Settings
+              </button>
+          </div>
         </div>
         <!-- Decorative Circle -->
         <div class="absolute -right-10 -bottom-20 w-64 h-64 bg-blue-500 rounded-full opacity-50 blur-3xl"></div>
@@ -48,9 +56,9 @@ import { AnalyticsComponent } from './analytics.component';
   `
 })
 export class DashboardComponent {
-    private router = inject(Router);
+  private router = inject(Router);
 
-    navigateToMatch() {
-        this.router.navigate(['/match']);
-    }
+  navigateToMatch() {
+    this.router.navigate(['/match']);
+  }
 }

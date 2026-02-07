@@ -6,6 +6,13 @@ import institutionRoutes from './institution.routes';
 import testimonialRoutes from './testimonial.routes';
 import settingsRoutes from './settings.routes';
 import authRoutes from './auth.routes';
+import employmentTypeRoutes from './employment-type.routes';
+import skillRoutes from './skill.routes';
+import analyticsRoutes from './analytics.routes';
+import aiMatchingRoutes from './ai-matching.routes';
+import contactRoutes from './contact.routes';
+import applicationRoutes from './application.routes';
+import employerRoutes from './employer.routes';
 
 const router = Router();
 
@@ -16,5 +23,14 @@ router.use('/users', userRoutes);
 router.use('/institutions', institutionRoutes);
 router.use('/testimonials', testimonialRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/employment-types', employmentTypeRoutes);
+router.use('/skills', skillRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/ai-matching', aiMatchingRoutes);
+router.use('/contact', contactRoutes);
+router.use('/applications', applicationRoutes);
+router.use('/employers', employerRoutes);
 
 export default router;
+
+

@@ -1,4 +1,4 @@
-import { createResourceRouter } from './resource-router';
+import { createResourceRouter } from './resource.router';
 import { institutionController } from '../controllers/institution.controller';
 import { Router } from 'express';
 

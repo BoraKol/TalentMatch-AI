@@ -10,7 +10,8 @@ export interface User {
     email: string;
     firstName?: string;
     lastName?: string;
-    role: 'super_admin' | 'institution_admin' | 'recruiter' | 'candidate' | 'referrer';
+    companyName?: string;
+    role: 'super_admin' | 'institution_admin' | 'candidate';
     token?: string;
 }
 

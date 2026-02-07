@@ -6,4 +6,6 @@ export const config = {
     mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/talentmatch',
     jwtSecret: process.env.JWT_SECRET || 'secret',
     env: process.env.NODE_ENV || 'development',
+    geminiApiKey: process.env.GEMINI_API_KEY || '',
 };
+

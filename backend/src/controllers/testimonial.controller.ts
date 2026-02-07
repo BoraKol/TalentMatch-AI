@@ -1,9 +1,9 @@
-import Testimonial from '../models/testimonial.model';
+import { testimonialService } from '../services/testimonial.service';
 import { BaseController } from './base.controller';
 
 export class TestimonialController extends BaseController<any> {
     constructor() {
-        super(Testimonial);
+        super(testimonialService);
     }
 }
 
