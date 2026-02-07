@@ -1,5 +1,5 @@
-import app from '../src/app';
-import { connectDB } from '../src/config/database';
+import app from '../backend/src/app';
+import { connectDB } from '../backend/src/config/database';
 
 // Connect to database
 connectDB();
