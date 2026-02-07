@@ -76,7 +76,19 @@
    npm run dev
    ```
 
-4. **Access the App**
+4. **SMTP Configuration (Email)**
+   - Create a `.env` file in the `backend` folder.
+   - Add the following variables (example for Gmail):
+     ```env
+     SMTP_HOST=smtp.gmail.com
+     SMTP_PORT=587
+     SMTP_SECURE=false
+     SMTP_USER=your-email@gmail.com
+     SMTP_PASS=your-app-specific-password
+     ```
+   - *Note: If not configured, emails will be simulated (logged to console).*
+
+5. **Access the App**
    Open [http://localhost:3000](http://localhost:3000) (or whichever port Vite/Angular assigns) in your browser.
 
 ---

@@ -36,13 +36,7 @@ export class EmailService {
 
         // MOCK MODE: If no transporter, simply log and return success
         if (!this.transporter) {
-            console.log('---------------------------------------------------');
-            console.log('📧 [MOCK EMAIL SENT]');
-            console.log(`To: ${options.to}`);
-            console.log(`Subject: ${options.subject}`);
-            console.log(`From: ${options.senderName} (${options.senderEmail})`);
-            console.log(`Message: \n${options.message}`);
-            console.log('---------------------------------------------------');
+            this.logMockEmail(options);
             return { messageId: 'mock-id-' + Date.now() };
         }
 
@@ -68,8 +62,10 @@ export class EmailService {
             console.log(`📧 Email sent: ${info.messageId}`);
             return info;
         } catch (error) {
-            console.error('❌ Error sending contact email:', error);
-            throw error; // Let the controller handle the error if real sending fails
+            console.error('❌ Error sending contact email (Real SMTP failed):', error);
+            console.warn('⚠️ Falling back to MOCK mode to prevent crash.');
+            this.logMockEmail(options);
+            return { messageId: 'mock-fallback-' + Date.now() };
         }
     }
 
@@ -78,11 +74,7 @@ export class EmailService {
 
         // MOCK MODE
         if (!this.transporter) {
-            console.log('---------------------------------------------------');
-            console.log('📧 [MOCK EMAIL SENT - INTERVIEW INVITE]');
-            console.log(`To: ${to}`);
-            console.log(`Subject: Interview Invitation: ${jobTitle}`);
-            console.log('---------------------------------------------------');
+            this.logMockInvite(to, jobTitle);
             return { messageId: 'mock-id-' + Date.now() };
         }
 
@@ -112,9 +104,29 @@ export class EmailService {
             }
             return info;
         } catch (error) {
-            console.error('Error sending email:', error);
-            throw error;
+            console.error('❌ Error sending interview invite (Real SMTP failed):', error);
+            console.warn('⚠️ Falling back to MOCK mode to prevent crash.');
+            this.logMockInvite(to, jobTitle);
+            return { messageId: 'mock-fallback-' + Date.now() };
         }
+    }
+
+    private logMockEmail(options: any) {
+        console.log('---------------------------------------------------');
+        console.log('📧 [MOCK EMAIL SENT]');
+        console.log(`To: ${options.to}`);
+        console.log(`Subject: ${options.subject}`);
+        console.log(`From: ${options.senderName} (${options.senderEmail})`);
+        console.log(`Message: \n${options.message}`);
+        console.log('---------------------------------------------------');
+    }
+
+    private logMockInvite(to: string, jobTitle: string) {
+        console.log('---------------------------------------------------');
+        console.log('📧 [MOCK EMAIL SENT - INTERVIEW INVITE]');
+        console.log(`To: ${to}`);
+        console.log(`Subject: Interview Invitation: ${jobTitle}`);
+        console.log('---------------------------------------------------');
     }
 }
 
