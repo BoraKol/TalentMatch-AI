@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: '/api'
+    apiUrl: 'https://talentmatch-ai-lnd7.onrender.com/api'
 };
