@@ -11,7 +11,7 @@
         }
     ],
     "functions": {
-        "backend/api/index.ts": {
+        "api/index.ts": {
             "includeFiles": "backend/src/**"
         }
     }
