@@ -2,12 +2,16 @@
     "version": 2,
     "rewrites": [
         {
+            "source": "/api/(.*)",
+            "destination": "/api/index.ts"
+        },
+        {
             "source": "/(.*)",
             "destination": "/frontend/index.html"
         }
     ],
     "functions": {
-        "api/[...route].ts": {
+        "api/index.ts": {
             "includeFiles": "backend/src/**"
         }
     }
