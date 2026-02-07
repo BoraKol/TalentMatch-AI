@@ -26,6 +26,22 @@ export class EmailService {
         }
     }
 
+    private async sendMailWithTimeout(mailOptions: any): Promise<any> {
+        if (!this.transporter) throw new Error('No transporter');
+
+        const timeoutMs = 5000; // Hard 5 second limit
+
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error(`Email sending timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+        });
+
+        const sendPromise = this.transporter.sendMail(mailOptions);
+
+        return Promise.race([sendPromise, timeoutPromise]);
+    }
+
     async sendContactEmail(options: {
         to: string;
         candidateName: string;
@@ -38,14 +54,14 @@ export class EmailService {
     }) {
         console.log(`📧 Preparing to send email to ${options.to}`);
 
-        // MOCK MODE: If no transporter, simply log and return success
+        // MOCK MODE check
         if (!this.transporter) {
             this.logMockEmail(options);
             return { messageId: 'mock-id-' + Date.now() };
         }
 
         try {
-            const info = await this.transporter.sendMail({
+            const mailOptions = {
                 from: `"${options.companyName}" <${process.env.SMTP_USER || 'noreply@talentmatch.ai'}>`,
                 to: options.to,
                 replyTo: options.senderEmail,
@@ -61,13 +77,15 @@ export class EmailService {
                         <p style="color: #64748b; font-size: 14px;">Reply directly to this email to contact <strong>${options.senderName}</strong> (${options.senderEmail}).</p>
                     </div>
                 `
-            });
+            };
+
+            const info = await this.sendMailWithTimeout(mailOptions);
 
             console.log(`📧 Email sent: ${info.messageId}`);
             return info;
         } catch (error) {
-            console.error('❌ Error sending contact email (Real SMTP failed):', error);
-            console.warn('⚠️ Falling back to MOCK mode to prevent crash.');
+            console.error('❌ Error sending contact email (Real SMTP failed or Timed out):', error);
+            console.warn('⚠️ Falling back to MOCK mode.');
             this.logMockEmail(options);
             return { messageId: 'mock-fallback-' + Date.now() };
         }
@@ -76,14 +94,13 @@ export class EmailService {
     async sendInterviewInvite(to: string, candidateName: string, jobTitle: string) {
         console.log(`📧 Preparing to send interview invite to ${to}`);
 
-        // MOCK MODE
         if (!this.transporter) {
             this.logMockInvite(to, jobTitle);
             return { messageId: 'mock-id-' + Date.now() };
         }
 
         try {
-            const info = await this.transporter.sendMail({
+            const mailOptions = {
                 from: '"TalentMatch AI" <recruit@talentmatch.ai>',
                 to: to,
                 subject: `Interview Invitation: ${jobTitle}`,
@@ -100,7 +117,9 @@ export class EmailService {
                         <p>Best regards,<br/>TalentMatch AI Recruiting Team</p>
                     </div>
                 `
-            });
+            };
+
+            const info = await this.sendMailWithTimeout(mailOptions);
 
             console.log(`📧 Email sent: ${info.messageId}`);
             if (nodemailer.getTestMessageUrl(info)) {
@@ -108,8 +127,8 @@ export class EmailService {
             }
             return info;
         } catch (error) {
-            console.error('❌ Error sending interview invite (Real SMTP failed):', error);
-            console.warn('⚠️ Falling back to MOCK mode to prevent crash.');
+            console.error('❌ Error sending interview invite (Real SMTP failed or Timed out):', error);
+            console.warn('⚠️ Falling back to MOCK mode.');
             this.logMockInvite(to, jobTitle);
             return { messageId: 'mock-fallback-' + Date.now() };
         }
