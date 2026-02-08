@@ -21,3 +21,18 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
         return res.status(401).json({ error: 'Invalid token' });
     }
 };
+
+// Alias for cleaner imports
+export const authMiddleware = authenticate;
+
+// Super Admin role check middleware
+export const superAdminMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    // @ts-ignore
+    const user = req.user;
+
+    if (!user || user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Access denied. Super Admin role required.' });
+    }
+
+    next();
+};

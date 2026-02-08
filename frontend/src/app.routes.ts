@@ -13,6 +13,11 @@ export class AppRoutes {
         { path: 'register/candidate', component: RegisterCandidateComponent },
         { path: 'register/employer', component: RegisterEmployerComponent },
 
+        // Public: Accept Super Admin Invite
+        {
+            path: 'admin/accept-invite/:token',
+            loadComponent: () => import('./components/admin/accept-invite.component').then(m => m.AcceptInviteComponent)
+        },
         // Candidate Routes (Protected)
         {
             path: 'candidate',

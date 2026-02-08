@@ -18,9 +18,11 @@ app.use(express.json());
 import apiRouter from './routes';
 import { inviteCandidate } from './controllers/custom.controller';
 import { seedDatabase } from './controllers/seed.controller';
+import adminInviteRoutes from './routes/admin-invite.routes';
 
 app.use('/api/health', healthRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminInviteRoutes);
 
 // Custom Routes (overrides generic if specific)
 app.post('/api/candidates/:id/invite', inviteCandidate);
