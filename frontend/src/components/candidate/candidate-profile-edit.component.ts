@@ -216,24 +216,76 @@ export class CandidateProfileEditComponent implements OnInit {
 
     // Default fallback skills from registration
     defaultSkills = [
+        // Frontend & Markup
+        { name: 'HTML', category: 'Frontend' },
+        { name: 'CSS', category: 'Frontend' },
+        { name: 'Sass (SCSS)', category: 'Frontend' },
+        { name: 'Less', category: 'Frontend' },
+        { name: 'XML', category: 'Frontend' },
         { name: 'JavaScript', category: 'Frontend' },
         { name: 'TypeScript', category: 'Frontend' },
         { name: 'Angular', category: 'Frontend' },
         { name: 'React', category: 'Frontend' },
         { name: 'Vue.js', category: 'Frontend' },
+        { name: 'Svelte', category: 'Frontend' },
+        { name: 'Next.js', category: 'Frontend' },
+        { name: 'Nuxt.js', category: 'Frontend' },
+        { name: 'Tailwind CSS', category: 'Frontend' },
+        { name: 'Bootstrap', category: 'Frontend' },
+
+        // Backend & Languages
         { name: 'Node.js', category: 'Backend' },
         { name: 'Python', category: 'Backend' },
         { name: 'Java', category: 'Backend' },
         { name: 'C#', category: 'Backend' },
+        { name: 'C++', category: 'Backend' },
+        { name: 'Go (Golang)', category: 'Backend' },
+        { name: 'Rust', category: 'Backend' },
+        { name: 'Ruby', category: 'Backend' },
+        { name: 'PHP', category: 'Backend' },
+        { name: 'Swift', category: 'Mobile' },
+        { name: 'Kotlin', category: 'Mobile' },
+        { name: 'Dart', category: 'Mobile' },
+
+        // Frameworks
+        { name: 'Django', category: 'Backend' },
+        { name: 'Flask', category: 'Backend' },
+        { name: 'Spring Boot', category: 'Backend' },
+        { name: 'Laravel', category: 'Backend' },
+        { name: 'Express.js', category: 'Backend' },
+        { name: 'NestJS', category: 'Backend' },
+        { name: 'ASP.NET Core', category: 'Backend' },
+
+        // Mobile
+        { name: 'React Native', category: 'Mobile' },
+        { name: 'Flutter', category: 'Mobile' },
+        { name: 'SwiftUI', category: 'Mobile' },
+
+        // Database
         { name: 'SQL', category: 'Database' },
-        { name: 'MongoDB', category: 'Database' },
+        { name: 'MySQL', category: 'Database' },
         { name: 'PostgreSQL', category: 'Database' },
+        { name: 'MongoDB', category: 'Database' },
+        { name: 'Redis', category: 'Database' },
+        { name: 'Elasticsearch', category: 'Database' },
+        { name: 'Firebase', category: 'Database' },
+
+        // DevOps & Cloud
         { name: 'AWS', category: 'DevOps' },
+        { name: 'Azure', category: 'DevOps' },
+        { name: 'Google Cloud (GCP)', category: 'DevOps' },
         { name: 'Docker', category: 'DevOps' },
         { name: 'Kubernetes', category: 'DevOps' },
-        { name: 'Figma', category: 'Design' },
+        { name: 'Jenkins', category: 'DevOps' },
         { name: 'Git', category: 'Tools' },
-        { name: 'CI/CD', category: 'DevOps' }
+        { name: 'CI/CD', category: 'DevOps' },
+        { name: 'Terraform', category: 'DevOps' },
+        { name: 'Ansible', category: 'DevOps' },
+
+        // Design
+        { name: 'Figma', category: 'Design' },
+        { name: 'Adobe XD', category: 'Design' },
+        { name: 'Sketch', category: 'Design' }
     ];
 
     availableSkills: any[] = [];

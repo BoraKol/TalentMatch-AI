@@ -182,9 +182,31 @@ export class JobPostComponent {
   }
 
   availableSkills = [
-    'JavaScript', 'TypeScript', 'Angular', 'React', 'Vue.js', 'Node.js',
-    'Python', 'Java', 'C#', 'SQL', 'MongoDB', 'PostgreSQL',
-    'AWS', 'Docker', 'Kubernetes', 'Git', 'CI/CD', 'Figma'
+    // Frontend & Markup
+    'HTML', 'CSS', 'Sass (SCSS)', 'Less', 'XML',
+    'JavaScript', 'TypeScript', 'Angular', 'React', 'Vue.js', 'Svelte',
+    'Next.js', 'Nuxt.js', 'Tailwind CSS', 'Bootstrap',
+
+    // Backend & Languages
+    'Node.js', 'Python', 'Java', 'C#', 'C++', 'Go (Golang)', 'Rust',
+    'Ruby', 'PHP', 'Swift', 'Kotlin', 'Dart',
+
+    // Frameworks
+    'Django', 'Flask', 'Spring Boot', 'Laravel', 'Express.js',
+    'NestJS', 'ASP.NET Core',
+
+    // Mobile
+    'React Native', 'Flutter', 'SwiftUI',
+
+    // Database
+    'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Firebase',
+
+    // DevOps & Cloud
+    'AWS', 'Azure', 'Google Cloud (GCP)', 'Docker', 'Kubernetes',
+    'Jenkins', 'Git', 'CI/CD', 'Terraform', 'Ansible',
+
+    // Design
+    'Figma', 'Adobe XD', 'Sketch'
   ];
 
   jobForm = this.fb.group({
