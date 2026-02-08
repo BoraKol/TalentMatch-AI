@@ -22,9 +22,9 @@ export class EmailService {
                     rejectUnauthorized: false
                 },
                 // Timeouts
-                connectionTimeout: 10000, // 10s
-                greetingTimeout: 10000,   // 10s
-                socketTimeout: 15000,     // 15s
+                connectionTimeout: 30000, // 30s
+                greetingTimeout: 30000,   // 30s
+                socketTimeout: 35000,     // 35s
 
                 debug: true,
                 logger: true,
@@ -41,7 +41,7 @@ export class EmailService {
     private async sendMailWithTimeout(mailOptions: any): Promise<any> {
         if (!this.transporter) throw new Error('No transporter');
 
-        const timeoutMs = 10000; // Hard 10 second limit
+        const timeoutMs = 35000; // Hard 35 second limit
 
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
