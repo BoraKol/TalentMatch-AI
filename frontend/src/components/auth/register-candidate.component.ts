@@ -228,24 +228,61 @@ export class RegisterCandidateComponent implements OnInit {
   isLoadingCities = signal(false);
 
   availableSkills = [
-    { name: 'JavaScript', category: 'Frontend' },
-    { name: 'TypeScript', category: 'Frontend' },
-    { name: 'Angular', category: 'Frontend' },
-    { name: 'React', category: 'Frontend' },
-    { name: 'Vue.js', category: 'Frontend' },
-    { name: 'Node.js', category: 'Backend' },
-    { name: 'Python', category: 'Backend' },
-    { name: 'Java', category: 'Backend' },
-    { name: 'C#', category: 'Backend' },
-    { name: 'SQL', category: 'Database' },
-    { name: 'MongoDB', category: 'Database' },
-    { name: 'PostgreSQL', category: 'Database' },
-    { name: 'AWS', category: 'DevOps' },
-    { name: 'Docker', category: 'DevOps' },
-    { name: 'Kubernetes', category: 'DevOps' },
-    { name: 'Figma', category: 'Design' },
-    { name: 'Git', category: 'Tools' },
-    { name: 'CI/CD', category: 'DevOps' }
+    // === TECHNICAL SKILLS ===
+    // Software Development - Frontend
+    { name: 'HTML', category: 'Software Development', skillType: 'technical' },
+    { name: 'CSS', category: 'Software Development', skillType: 'technical' },
+    { name: 'JavaScript', category: 'Software Development', skillType: 'technical' },
+    { name: 'TypeScript', category: 'Software Development', skillType: 'technical' },
+    { name: 'React', category: 'Software Development', skillType: 'technical' },
+    { name: 'Angular', category: 'Software Development', skillType: 'technical' },
+    { name: 'Vue.js', category: 'Software Development', skillType: 'technical' },
+    { name: 'Next.js', category: 'Software Development', skillType: 'technical' },
+
+    // Software Development - Backend
+    { name: 'Node.js', category: 'Software Development', skillType: 'technical' },
+    { name: 'Python', category: 'Software Development', skillType: 'technical' },
+    { name: 'Java', category: 'Software Development', skillType: 'technical' },
+    { name: 'C#', category: 'Software Development', skillType: 'technical' },
+    { name: 'Go (Golang)', category: 'Software Development', skillType: 'technical' },
+
+    // Mobile Development
+    { name: 'React Native', category: 'Mobile Development', skillType: 'technical' },
+    { name: 'Flutter', category: 'Mobile Development', skillType: 'technical' },
+    { name: 'Swift', category: 'Mobile Development', skillType: 'technical' },
+    { name: 'Kotlin', category: 'Mobile Development', skillType: 'technical' },
+
+    // Data & AI
+    { name: 'TensorFlow', category: 'Data & AI', skillType: 'technical' },
+    { name: 'PyTorch', category: 'Data & AI', skillType: 'technical' },
+    { name: 'Pandas', category: 'Data & AI', skillType: 'technical' },
+    { name: 'OpenAI API', category: 'Data & AI', skillType: 'technical' },
+
+    // Cloud & DevOps
+    { name: 'AWS', category: 'Cloud & DevOps', skillType: 'technical' },
+    { name: 'Azure', category: 'Cloud & DevOps', skillType: 'technical' },
+    { name: 'Docker', category: 'Cloud & DevOps', skillType: 'technical' },
+    { name: 'Kubernetes', category: 'Cloud & DevOps', skillType: 'technical' },
+    { name: 'Git', category: 'Cloud & DevOps', skillType: 'technical' },
+
+    // Databases
+    { name: 'PostgreSQL', category: 'Databases', skillType: 'technical' },
+    { name: 'MongoDB', category: 'Databases', skillType: 'technical' },
+    { name: 'Redis', category: 'Databases', skillType: 'technical' },
+
+    // Design
+    { name: 'Figma', category: 'Design & UX', skillType: 'technical' },
+
+    // === SOFT SKILLS ===
+    { name: 'Communication', category: 'Soft Skills', skillType: 'soft' },
+    { name: 'Problem Solving', category: 'Soft Skills', skillType: 'soft' },
+    { name: 'Team Collaboration', category: 'Soft Skills', skillType: 'soft' },
+    { name: 'Leadership', category: 'Soft Skills', skillType: 'soft' },
+
+    // === NICE TO HAVE ===
+    { name: 'Agile/Scrum', category: 'Nice to Have', skillType: 'nice_to_have' },
+    { name: 'JIRA', category: 'Nice to Have', skillType: 'nice_to_have' },
+    { name: 'AWS Certification', category: 'Nice to Have', skillType: 'nice_to_have' }
   ];
 
   // State Signals

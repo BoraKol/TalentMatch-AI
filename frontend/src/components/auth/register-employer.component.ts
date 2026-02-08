@@ -119,8 +119,7 @@ import { environment } from '../../environments/environment';
                         </svg>
                       </div>
                       <input formControlName="companyName" type="text" 
-                             class="w-full pl-10 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200"
-                             placeholder="Acme Corporation">
+                             placeholder="Tech Solutions Inc">
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4">
@@ -167,7 +166,7 @@ import { environment } from '../../environments/environment';
                       </div>
                       <input formControlName="companyWebsite" type="url" 
                              class="w-full pl-10 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200"
-                             placeholder="https://www.acmecorp.com">
+                             placeholder="https://www.company.com">
                     </div>
                   </div>
                </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -23,6 +23,14 @@ import { environment } from '../../environments/environment';
           </a>
           <h1 class="text-3xl font-bold text-slate-800">Post a New Job</h1>
           <p class="text-slate-600 mt-2">Create a job listing and find the best candidates with AI</p>
+        </div>
+        
+        <!-- DEBUG INFO (Temporary) -->
+        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-xs font-mono text-slate-700 overflow-auto">
+          <p class="font-bold text-red-600 mb-2">DEBUG MODE: Checking Current User Data</p>
+          <p><strong>Calculated Company Name:</strong> "{{ getCompanyName() }}"</p>
+          <p><strong>User Company in Session:</strong> "{{ authService.currentUser()?.companyName }}"</p>
+          <p><strong>Full User Object:</strong> {{ authService.currentUser() | json }}</p>
         </div>
 
         <!-- Form -->
@@ -182,32 +190,54 @@ export class JobPostComponent {
   }
 
   availableSkills = [
-    // Frontend & Markup
-    'HTML', 'CSS', 'Sass (SCSS)', 'Less', 'XML',
-    'JavaScript', 'TypeScript', 'Angular', 'React', 'Vue.js', 'Svelte',
-    'Next.js', 'Nuxt.js', 'Tailwind CSS', 'Bootstrap',
+    // === TECHNICAL SKILLS ===
+    // Software Development
+    'HTML', 'CSS', 'JavaScript', 'TypeScript', 'React', 'Angular', 'Vue.js', 'Next.js', 'Tailwind CSS', 'Sass/SCSS',
+    'Node.js', 'Python', 'Java', 'C#', 'Go (Golang)', 'Rust', 'PHP', 'Ruby',
+    'Express.js', 'NestJS', 'Django', 'Flask', 'Spring Boot', 'ASP.NET Core', 'Laravel',
 
-    // Backend & Languages
-    'Node.js', 'Python', 'Java', 'C#', 'C++', 'Go (Golang)', 'Rust',
-    'Ruby', 'PHP', 'Swift', 'Kotlin', 'Dart',
+    // Mobile Development
+    'React Native', 'Flutter', 'Swift', 'SwiftUI', 'Kotlin', 'Dart',
 
-    // Frameworks
-    'Django', 'Flask', 'Spring Boot', 'Laravel', 'Express.js',
-    'NestJS', 'ASP.NET Core',
+    // Data & AI
+    'Pandas', 'NumPy', 'Jupyter', 'R', 'TensorFlow', 'PyTorch', 'Scikit-learn',
+    'OpenAI API', 'LangChain', 'Apache Spark', 'Airflow', 'dbt',
 
-    // Mobile
-    'React Native', 'Flutter', 'SwiftUI',
+    // Cloud & DevOps
+    'AWS', 'Azure', 'Google Cloud (GCP)', 'Docker', 'Kubernetes', 'Helm',
+    'Jenkins', 'GitHub Actions', 'GitLab CI', 'Terraform', 'Ansible', 'Git',
 
-    // Database
-    'SQL', 'MySQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Firebase',
+    // Databases
+    'PostgreSQL', 'MySQL', 'SQL Server', 'Oracle', 'MongoDB', 'Redis',
+    'Elasticsearch', 'DynamoDB', 'Firebase',
 
-    // DevOps & Cloud
-    'AWS', 'Azure', 'Google Cloud (GCP)', 'Docker', 'Kubernetes',
-    'Jenkins', 'Git', 'CI/CD', 'Terraform', 'Ansible',
+    // Networking & Security
+    'TCP/IP', 'DNS', 'Load Balancing', 'CDN', 'VPN',
+    'Penetration Testing', 'OWASP', 'SIEM', 'IAM', 'Firewall',
 
-    // Design
-    'Figma', 'Adobe XD', 'Sketch'
+    // Design & UX
+    'Figma', 'Adobe XD', 'Sketch', 'User Research', 'Prototyping',
+
+    // === SOFT SKILLS ===
+    'Communication', 'Problem Solving', 'Team Collaboration', 'Time Management',
+    'Adaptability', 'Critical Thinking', 'Leadership', 'Mentoring',
+
+    // === NICE TO HAVE ===
+    'Agile/Scrum', 'JIRA', 'Confluence', 'Technical Writing',
+    'Open Source Contribution', 'Startup Experience', 'Remote Work Experience',
+    'AWS Certification', 'Azure Certification', 'CISSP', 'PMP'
   ];
+
+  constructor() {
+    effect(() => {
+      const company = this.getCompanyName();
+      if (company && this.jobForm) {
+        this.jobForm.get('company')?.setValue(company);
+      }
+    });
+  }
+
+  // ... (rest of class)
 
   jobForm = this.fb.group({
     title: ['', Validators.required],
