@@ -7,30 +7,29 @@ export class EmailService {
         // Initialize with Environment Variables if present
         if (process.env.SMTP_HOST && process.env.SMTP_USER) {
 
-            const isGmail = process.env.SMTP_HOST.includes('gmail');
+            console.log(`📧 Email Service: Configuring SMTP with Host: ${process.env.SMTP_HOST}, Port: ${process.env.SMTP_PORT}, Secure: ${process.env.SMTP_SECURE}`);
+
             const config: any = {
+                host: process.env.SMTP_HOST,
+                port: parseInt(process.env.SMTP_PORT || '587'),
+                secure: process.env.SMTP_SECURE === 'true', // Must be string 'true' to be true
                 auth: {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS
                 },
-                // Timeouts to prevent hanging
-                connectionTimeout: 10000, // 10 seconds
-                greetingTimeout: 5000,   // 5 seconds
-                socketTimeout: 10000,    // 10 seconds
-                debug: true, // Enable debug logs
-                logger: true, // Log to console
-                family: 4     // Force IPv4 to prevent IPv6 issues on Render
-            };
+                tls: {
+                    // Do not fail on invalid certs (common issue with some providers/proxies)
+                    rejectUnauthorized: false
+                },
+                // Timeouts
+                connectionTimeout: 10000, // 10s
+                greetingTimeout: 10000,   // 10s
+                socketTimeout: 15000,     // 15s
 
-            if (isGmail) {
-                console.log('📧 Email Service: Detected Gmail, using "service: gmail" preset.');
-                config.service = 'gmail';
-            } else {
-                console.log(`📧 Email Service: Configured with SMTP Host (${process.env.SMTP_HOST})`);
-                config.host = process.env.SMTP_HOST;
-                config.port = parseInt(process.env.SMTP_PORT || '587');
-                config.secure = process.env.SMTP_SECURE === 'true';
-            }
+                debug: true,
+                logger: true,
+                family: 4 // Force IPv4 (Critical for Render/Gmail)
+            };
 
             this.transporter = nodemailer.createTransport(config);
         } else {
