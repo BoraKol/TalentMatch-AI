@@ -11,7 +11,7 @@ export interface User {
     firstName?: string;
     lastName?: string;
     companyName?: string;
-    role: 'super_admin' | 'institution_admin' | 'candidate';
+    role: 'super_admin' | 'institution_admin' | 'institution_user' | 'employer' | 'candidate';
     token?: string;
 }
 

@@ -4,7 +4,7 @@ import { RegisterCandidateComponent } from './components/auth/register-candidate
 import { RegisterEmployerComponent } from './components/auth/register-employer.component';
 import { AdminLayoutComponent } from './components/admin/admin-layout.component';
 import { AdminDashboardComponent } from './components/admin/admin-dashboard.component';
-import { superAdminGuard, candidateGuard, employerGuard } from './guards/auth.guard';
+import { superAdminGuard, candidateGuard, employerGuard, institutionGuard } from './guards/auth.guard';
 
 export class AppRoutes {
     static routes: Routes = [
@@ -13,9 +13,9 @@ export class AppRoutes {
         { path: 'register/candidate', component: RegisterCandidateComponent },
         { path: 'register/employer', component: RegisterEmployerComponent },
 
-        // Public: Accept Super Admin Invite
+        // Public: Accept Invite (all types)
         {
-            path: 'admin/accept-invite/:token',
+            path: 'accept-invite/:token',
             loadComponent: () => import('./components/admin/accept-invite.component').then(m => m.AcceptInviteComponent)
         },
         // Candidate Routes (Protected)

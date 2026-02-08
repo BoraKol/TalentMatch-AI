@@ -58,8 +58,8 @@ export const employerGuard: CanActivateFn = (route, state) => {
 
     if (authService.isAuthenticated()) {
         const user = authService.currentUser();
-        // institution_admin acts as the employer role
-        if (user?.role === 'institution_admin') {
+        // Both institution_admin and employer roles can access employer routes
+        if (user?.role === 'institution_admin' || user?.role === 'employer') {
             return true;
         }
     }
@@ -68,3 +68,18 @@ export const employerGuard: CanActivateFn = (route, state) => {
     return false;
 };
 
+export const institutionGuard: CanActivateFn = (route, state) => {
+    const authService = inject(AuthService);
+    const router = inject(Router);
+
+    if (authService.isAuthenticated()) {
+        const user = authService.currentUser();
+        // Institution admins and users can access institution routes
+        if (user?.role === 'institution_admin' || user?.role === 'institution_user') {
+            return true;
+        }
+    }
+
+    router.navigate(['/login']);
+    return false;
+};
