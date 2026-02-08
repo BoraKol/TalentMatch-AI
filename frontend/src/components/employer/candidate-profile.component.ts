@@ -3,38 +3,40 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 
 interface CandidateProfile {
-    _id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    skills: string[];
-    experience: number;
-    education?: {
-        degree?: string;
-        field?: string;
-        institution?: string;
-        graduationYear?: number;
-    };
-    school?: string;
-    department?: string;
-    gpa?: number;
-    bio?: string;
-    linkedIn?: string;
-    github?: string;
-    portfolio?: string;
-    resumeUrl?: string;
-    status: string;
-    createdAt: string;
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  skills: string[];
+  experience: number;
+  education?: {
+    degree?: string;
+    field?: string;
+    institution?: string;
+    graduationYear?: number;
+  };
+  school?: string;
+  department?: string;
+  gpa?: number;
+  bio?: string;
+  linkedIn?: string;
+  github?: string;
+  portfolio?: string;
+  resumeUrl?: string;
+  status: string;
+  createdAt: string;
 }
 
 @Component({
-    selector: 'app-candidate-profile',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-candidate-profile',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule],
+  template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-8">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Back Button -->
@@ -223,12 +225,12 @@ interface CandidateProfile {
               <div class="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700 p-6">
                 <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
                 <div class="space-y-3">
-                  <a [href]="'mailto:' + candidate()!.email" class="flex items-center gap-3 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all">
+                  <button (click)="openContactModal()" class="flex items-center gap-3 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all cursor-pointer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                     Send Email
-                  </a>
+                  </button>
                   @if (candidate()!.resumeUrl) {
                     <a [href]="candidate()!.resumeUrl" target="_blank" class="flex items-center gap-3 w-full py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,74 +258,240 @@ interface CandidateProfile {
             </div>
           </div>
         }
+        }
       </div>
     </div>
+
+    <!-- Contact Modal -->
+    @if (showContactModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" (click)="closeContactModal()">
+        <div class="relative bg-slate-800 rounded-3xl border border-slate-700 w-full max-w-lg shadow-2xl" (click)="$event.stopPropagation()">
+          <!-- Modal Header -->
+          <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-xl font-bold text-white">Contact Candidate</h3>
+                  <p class="text-sm text-slate-400">Send a message to {{ candidate()?.firstName }} {{ candidate()?.lastName }}</p>
+                </div>
+              </div>
+              <button (click)="closeContactModal()" class="p-2 hover:bg-slate-700 rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Subject</label>
+              <input type="text" [(ngModel)]="contactSubject" 
+                     class="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-600 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                     placeholder="Enter email subject...">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-2">Message</label>
+              <textarea [(ngModel)]="contactMessage" rows="5"
+                        class="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-600 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors resize-none"
+                        placeholder="Write your message to the candidate..."></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Your Name</label>
+                <input type="text" [(ngModel)]="senderName" 
+                       class="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-600 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                       placeholder="John Doe">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Your Email</label>
+                <input type="email" [(ngModel)]="senderEmail" 
+                       class="w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-600 text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
+                       placeholder="john@company.com">
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="p-6 border-t border-slate-700 flex gap-3">
+            <button (click)="closeContactModal()" 
+                    class="flex-1 py-3 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors">
+              Cancel
+            </button>
+            <button (click)="sendContactEmail()" 
+                    [disabled]="isSendingEmail()"
+                    class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              @if (isSendingEmail()) {
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Sending...
+              } @else {
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                </svg>
+                Send Email
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Success Toast -->
+    @if (showSuccessToast()) {
+      <div class="fixed bottom-6 right-6 z-50 animate-slide-up">
+        <div class="bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <span class="font-medium">Email sent successfully!</span>
+        </div>
+      </div>
+    }
   `
 })
 export class CandidateProfileComponent implements OnInit {
-    private route = inject(ActivatedRoute);
-    private router = inject(Router);
-    private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
-    isLoading = signal(true);
-    error = signal('');
-    candidate = signal<CandidateProfile | null>(null);
+  isLoading = signal(true);
+  error = signal('');
+  candidate = signal<CandidateProfile | null>(null);
 
-    ngOnInit() {
-        const candidateId = this.route.snapshot.paramMap.get('candidateId');
-        if (candidateId) {
-            this.loadCandidate(candidateId);
-        } else {
-            this.error.set('No candidate ID provided');
-            this.isLoading.set(false);
-        }
+  // Modal State
+  showContactModal = signal(false);
+  isSendingEmail = signal(false);
+  showSuccessToast = signal(false);
+
+  // Form Fields
+  contactSubject = '';
+  contactMessage = '';
+  senderName = '';
+  senderEmail = '';
+
+  ngOnInit() {
+    const candidateId = this.route.snapshot.paramMap.get('candidateId');
+    if (candidateId) {
+      this.loadCandidate(candidateId);
+    } else {
+      this.error.set('No candidate ID provided');
+      this.isLoading.set(false);
+    }
+  }
+
+  loadCandidate(candidateId: string) {
+    this.http.get<CandidateProfile>(`${environment.apiUrl}/candidates/${candidateId}`).subscribe({
+      next: (data) => {
+        this.candidate.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err.error?.error || 'Failed to load candidate profile');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  goBack() {
+    window.history.back();
+  }
+
+  getInitials(firstName: string, lastName: string): string {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  }
+
+  getStatusBgColor(status: string): string {
+    switch (status) {
+      case 'active': return 'bg-emerald-500/20';
+      case 'hired': return 'bg-blue-500/20';
+      case 'rejected': return 'bg-red-500/20';
+      default: return 'bg-slate-500/20';
+    }
+  }
+
+  getStatusIconColor(status: string): string {
+    switch (status) {
+      case 'active': return 'text-emerald-400';
+      case 'hired': return 'text-blue-400';
+      case 'rejected': return 'text-red-400';
+      default: return 'text-slate-400';
+    }
+  }
+
+  formatDate(dateStr: string): string {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  // Contact Modal Methods
+  openContactModal() {
+    const c = this.candidate();
+    if (!c) return;
+
+    this.contactSubject = `Opportunity at our company`;
+    this.contactMessage = `Hi ${c.firstName},\n\nI was impressed by your profile on TalentMatch AI.\n\nWe have an exciting opportunity that I believe would be a great fit for your experience.\n\nWould you be interested in learning more about this role?\n\nBest regards`;
+
+    // Auto-fill sender info from logged-in user
+    const user = this.authService.currentUser();
+    if (user) {
+      this.senderName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Hiring Manager';
+      this.senderEmail = user.email || '';
     }
 
-    loadCandidate(candidateId: string) {
-        this.http.get<CandidateProfile>(`${environment.apiUrl}/candidates/${candidateId}`).subscribe({
-            next: (data) => {
-                this.candidate.set(data);
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                this.error.set(err.error?.error || 'Failed to load candidate profile');
-                this.isLoading.set(false);
-            }
-        });
+    this.showContactModal.set(true);
+  }
+
+  closeContactModal() {
+    this.showContactModal.set(false);
+  }
+
+  sendContactEmail() {
+    const c = this.candidate();
+    if (!c || !this.contactSubject || !this.contactMessage || !this.senderName || !this.senderEmail) {
+      return;
     }
 
-    goBack() {
-        window.history.back();
-    }
+    this.isSendingEmail.set(true);
 
-    getInitials(firstName: string, lastName: string): string {
-        return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
-    }
+    const payload = {
+      candidateId: c._id,
+      // jobId might be null here if we are just browsing candidates generally
+      // The backend should handle optional jobId gracefully, or we can look it up from query params if available
+      subject: this.contactSubject,
+      message: this.contactMessage,
+      senderName: this.senderName,
+      senderEmail: this.senderEmail,
+      companyName: 'Company' // We might need to fetch this from user profile if not available in job context
+    };
 
-    getStatusBgColor(status: string): string {
-        switch (status) {
-            case 'active': return 'bg-emerald-500/20';
-            case 'hired': return 'bg-blue-500/20';
-            case 'rejected': return 'bg-red-500/20';
-            default: return 'bg-slate-500/20';
-        }
-    }
-
-    getStatusIconColor(status: string): string {
-        switch (status) {
-            case 'active': return 'text-emerald-400';
-            case 'hired': return 'text-blue-400';
-            case 'rejected': return 'text-red-400';
-            default: return 'text-slate-400';
-        }
-    }
-
-    formatDate(dateStr: string): string {
-        if (!dateStr) return 'N/A';
-        return new Date(dateStr).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
+    this.http.post(`${environment.apiUrl}/contact/candidate`, payload).subscribe({
+      next: (response: any) => {
+        this.isSendingEmail.set(false);
+        this.closeContactModal();
+        this.showSuccessToast.set(true);
+        setTimeout(() => {
+          this.showSuccessToast.set(false);
+        }, 3000);
+      },
+      error: (err) => {
+        this.isSendingEmail.set(false);
+        console.error('Failed to send email:', err);
+        alert('Failed to send email. Please try again.');
+      }
+    });
+  }
 }

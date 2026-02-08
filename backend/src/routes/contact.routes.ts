@@ -18,8 +18,12 @@ router.post('/candidate', async (req: Request, res: Response) => {
             companyName
         } = req.body;
 
+        // Debug Log
+        console.log('📧 API: Received Contact Candidate Request:', { candidateId, jobId, subject, senderEmail });
+
         // Validate required fields
         if (!candidateId || !subject || !message || !senderName || !senderEmail || !companyName) {
+            console.error('❌ API: Missing required fields:', req.body);
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
