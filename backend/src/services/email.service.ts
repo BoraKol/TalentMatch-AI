@@ -15,7 +15,7 @@ export class EmailService {
                     pass: process.env.SMTP_PASS
                 },
                 // Timeouts to prevent hanging
-                connectionTimeout: 5000, // 5 seconds
+                connectionTimeout: 10000, // 10 seconds
                 greetingTimeout: 5000,   // 5 seconds
                 socketTimeout: 10000,    // 10 seconds
             });
@@ -29,7 +29,7 @@ export class EmailService {
     private async sendMailWithTimeout(mailOptions: any): Promise<any> {
         if (!this.transporter) throw new Error('No transporter');
 
-        const timeoutMs = 5000; // Hard 5 second limit
+        const timeoutMs = 10000; // Hard 10 second limit
 
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
