@@ -258,7 +258,6 @@ interface CandidateProfile {
             </div>
           </div>
         }
-        }
       </div>
     </div>
 
