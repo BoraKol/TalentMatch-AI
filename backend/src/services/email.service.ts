@@ -6,10 +6,9 @@ export class EmailService {
     constructor() {
         // Initialize with Environment Variables if present
         if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-            this.transporter = nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: parseInt(process.env.SMTP_PORT || '587'),
-                secure: process.env.SMTP_SECURE === 'true',
+
+            const isGmail = process.env.SMTP_HOST.includes('gmail');
+            const config: any = {
                 auth: {
                     user: process.env.SMTP_USER,
                     pass: process.env.SMTP_PASS
@@ -18,8 +17,22 @@ export class EmailService {
                 connectionTimeout: 10000, // 10 seconds
                 greetingTimeout: 5000,   // 5 seconds
                 socketTimeout: 10000,    // 10 seconds
-            });
-            console.log(`📧 Email Service: Configured with SMTP (${process.env.SMTP_HOST})`);
+                debug: true, // Enable debug logs
+                logger: true, // Log to console
+                family: 4     // Force IPv4 to prevent IPv6 issues on Render
+            };
+
+            if (isGmail) {
+                console.log('📧 Email Service: Detected Gmail, using "service: gmail" preset.');
+                config.service = 'gmail';
+            } else {
+                console.log(`📧 Email Service: Configured with SMTP Host (${process.env.SMTP_HOST})`);
+                config.host = process.env.SMTP_HOST;
+                config.port = parseInt(process.env.SMTP_PORT || '587');
+                config.secure = process.env.SMTP_SECURE === 'true';
+            }
+
+            this.transporter = nodemailer.createTransport(config);
         } else {
             console.log('⚠️ Email Service: No SMTP configuration found. Emails will be MOCKED (logged to console).');
             this.transporter = null;
