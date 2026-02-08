@@ -24,14 +24,6 @@ import { environment } from '../../environments/environment';
           <h1 class="text-3xl font-bold text-slate-800">Post a New Job</h1>
           <p class="text-slate-600 mt-2">Create a job listing and find the best candidates with AI</p>
         </div>
-        
-        <!-- DEBUG INFO (Temporary) -->
-        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-xs font-mono text-slate-700 overflow-auto">
-          <p class="font-bold text-red-600 mb-2">DEBUG MODE: Checking Current User Data</p>
-          <p><strong>Calculated Company Name:</strong> "{{ getCompanyName() }}"</p>
-          <p><strong>User Company in Session:</strong> "{{ authService.currentUser()?.companyName }}"</p>
-          <p><strong>Full User Object:</strong> {{ authService.currentUser() | json }}</p>
-        </div>
 
         <!-- Form -->
         <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
