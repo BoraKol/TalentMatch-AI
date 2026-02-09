@@ -60,6 +60,19 @@ export class AppRoutes {
             ]
         },
 
+        // Institution Routes (Protected)
+        {
+            path: 'institution',
+            canActivate: [institutionGuard],
+            children: [
+                { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+                {
+                    path: 'dashboard',
+                    loadComponent: () => import('./components/institution/institution-dashboard.component').then(m => m.InstitutionDashboardComponent)
+                }
+            ]
+        },
+
         // Admin Routes (Protected)
         {
             path: 'admin',
