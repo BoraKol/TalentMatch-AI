@@ -103,10 +103,10 @@ export class LoginComponent {
           // Redirect based on role
           if (res.user.role === 'super_admin') {
             this.router.navigate(['/admin/dashboard']);
-          } else if (res.user.role === 'institution_admin' || res.user.role === 'employer') {
-            this.router.navigate(['/employer/dashboard']);
-          } else if (res.user.role === 'institution_user') {
+          } else if (res.user.role === 'institution_admin' || res.user.role === 'institution_user') {
             this.router.navigate(['/institution/dashboard']);
+          } else if (res.user.role === 'employer') {
+            this.router.navigate(['/employer/dashboard']);
           } else if (res.user.role === 'candidate') {
             this.router.navigate(['/candidate/dashboard']);
           } else {
