@@ -21,6 +21,8 @@ import { AuthService } from '../../services/auth.service';
           </p>
           <p class="mt-1 text-sm text-slate-600">
             <a routerLink="/register/employer" class="font-medium text-emerald-600 hover:text-emerald-500">Register as an Employer</a>
+            <span class="mx-2 text-slate-300">|</span>
+            <a routerLink="/register/institution" class="font-medium text-indigo-600 hover:text-indigo-500">Register Institution</a>
           </p>
         </div>
         

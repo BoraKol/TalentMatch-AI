@@ -139,6 +139,13 @@ export class AuthController {
                     website: companyWebsite,
                     status: 'active'
                 });
+            } else {
+                // Check 5-user limit for existing institution
+                const userCount = await User.countDocuments({ institution: institution._id });
+                if (userCount >= (institution.maxUsers || 5)) {
+                    res.status(400).json({ error: `Institution has reached maximum user limit (${institution.maxUsers || 5})` });
+                    return;
+                }
             }
 
             // Create User
@@ -155,6 +162,62 @@ export class AuthController {
             res.status(201).json({ message: 'Employer registered successfully', institutionId: institution._id });
         } catch (error: any) {
             console.error('Register Employer Error:', error);
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    // Register Institution (Public - creates new institution with admin)
+    async registerInstitution(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, password, firstName, lastName, institutionName, institutionType, emailDomain, website } = req.body;
+
+            // Check existing User
+            const existing = await User.findOne({ email });
+            if (existing) {
+                res.status(400).json({ error: 'Email already exists' });
+                return;
+            }
+
+            // Check if institution with this email domain already exists
+            const Institution = require('../models/institution.model').default;
+            const existingInstitution = await Institution.findOne({ emailDomain });
+            if (existingInstitution) {
+                res.status(400).json({ error: 'An institution with this email domain already exists. Please contact your admin.' });
+                return;
+            }
+
+            // Hash Password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Create Institution
+            const institution = await Institution.create({
+                name: institutionName,
+                institutionType: institutionType || 'university',
+                emailDomain,
+                adminEmail: email,
+                website,
+                maxUsers: 5,
+                status: 'active'
+            });
+
+            // Create User as institution_admin
+            const user = await User.create({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role: 'institution_admin',
+                isActive: true,
+                institution: institution._id
+            });
+
+            res.status(201).json({
+                message: 'Institution registered successfully',
+                institutionId: institution._id,
+                remainingSlots: 4 // Admin takes 1 of 5 slots
+            });
+        } catch (error: any) {
+            console.error('Register Institution Error:', error);
             res.status(400).json({ error: error.message });
         }
     }

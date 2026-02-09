@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './components/auth/login.component';
 import { RegisterCandidateComponent } from './components/auth/register-candidate.component';
 import { RegisterEmployerComponent } from './components/auth/register-employer.component';
+import { RegisterInstitutionComponent } from './components/auth/register-institution.component';
 import { AdminLayoutComponent } from './components/admin/admin-layout.component';
 import { AdminDashboardComponent } from './components/admin/admin-dashboard.component';
 import { superAdminGuard, candidateGuard, employerGuard, institutionGuard } from './guards/auth.guard';
@@ -12,6 +13,7 @@ export class AppRoutes {
         { path: 'login', component: LoginComponent },
         { path: 'register/candidate', component: RegisterCandidateComponent },
         { path: 'register/employer', component: RegisterEmployerComponent },
+        { path: 'register/institution', component: RegisterInstitutionComponent },
 
         // Public: Accept Invite (all types)
         {
