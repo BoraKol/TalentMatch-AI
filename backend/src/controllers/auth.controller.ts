@@ -171,6 +171,31 @@ export class AuthController {
         try {
             const { email, password, firstName, lastName, institutionName, institutionType, emailDomain, website } = req.body;
 
+            // List of public email domains that cannot be used for institution registration
+            const publicEmailDomains = [
+                'gmail.com', 'googlemail.com', 'hotmail.com', 'outlook.com', 'live.com',
+                'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'icloud.com', 'me.com', 'mac.com',
+                'aol.com', 'protonmail.com', 'proton.me', 'mail.com', 'zoho.com',
+                'gmx.com', 'gmx.net', 'yandex.com', 'tutanota.com'
+            ];
+
+            // Check if the provided email domain is a public email provider
+            if (publicEmailDomains.includes(emailDomain.toLowerCase())) {
+                res.status(400).json({
+                    error: 'Public email domains (gmail, hotmail, etc.) cannot be used for institution registration. Please use your institutional email domain.'
+                });
+                return;
+            }
+
+            // Verify that admin email matches the institution's email domain
+            const adminEmailDomain = email.split('@')[1];
+            if (adminEmailDomain.toLowerCase() !== emailDomain.toLowerCase()) {
+                res.status(400).json({
+                    error: `Your email domain (${adminEmailDomain}) must match the institution's email domain (${emailDomain}).`
+                });
+                return;
+            }
+
             // Check existing User
             const existing = await User.findOne({ email });
             if (existing) {
@@ -180,9 +205,9 @@ export class AuthController {
 
             // Check if institution with this email domain already exists
             const Institution = require('../models/institution.model').default;
-            const existingInstitution = await Institution.findOne({ emailDomain });
+            const existingInstitution = await Institution.findOne({ emailDomain: emailDomain.toLowerCase() });
             if (existingInstitution) {
-                res.status(400).json({ error: 'An institution with this email domain already exists. Please contact your admin.' });
+                res.status(400).json({ error: 'An institution with this email domain already exists. Please contact your institution admin to get an invite.' });
                 return;
             }
 
