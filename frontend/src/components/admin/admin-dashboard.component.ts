@@ -16,6 +16,32 @@ interface DashboardData {
   topEmployers: { name: string; count: number }[];
 }
 
+interface AdminStats {
+  totalInstitutions: number;
+  activeInstitutions: number;
+  totalEmployers: number;
+  totalCandidates: number;
+  totalJobs: number;
+  totalApplications: number;
+  recentRegistrations: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    institutionName: string | null;
+    registeredAt: string;
+  }[];
+}
+
+interface Registration {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  institutionName: string | null;
+  registeredAt: string;
+}
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
@@ -278,8 +304,46 @@ interface DashboardData {
             </div>
           </div>
         </div>
+
+        <!-- Recent Registrations -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-slate-800">Recent Registrations</h3>
+            <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">Super Admin View</span>
+          </div>
+          <div class="space-y-3">
+            <div *ngFor="let reg of recentRegistrations()" 
+                 class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
+                   [class]="reg.role === 'employer' ? 'bg-emerald-100 text-emerald-700' :
+                            reg.role === 'candidate' ? 'bg-blue-100 text-blue-700' :
+                            reg.role === 'institution_admin' ? 'bg-indigo-100 text-indigo-700' :
+                            'bg-slate-200 text-slate-600'">
+                {{ reg.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-slate-800 truncate">{{ reg.name || reg.email }}</p>
+                <p class="text-xs text-slate-500">{{ reg.email }}</p>
+              </div>
+              <div class="text-right">
+                <span class="inline-block px-2 py-1 text-xs font-medium rounded-full"
+                      [class]="reg.role === 'employer' ? 'bg-emerald-100 text-emerald-700' :
+                               reg.role === 'candidate' ? 'bg-blue-100 text-blue-700' :
+                               reg.role === 'institution_admin' ? 'bg-indigo-100 text-indigo-700' :
+                               'bg-slate-100 text-slate-600'">
+                  {{ getRoleBadge(reg.role) }}
+                </span>
+                <p class="text-xs text-slate-400 mt-1">{{ reg.institutionName || 'No institution' }}</p>
+              </div>
+            </div>
+            <div *ngIf="recentRegistrations().length === 0" class="text-center text-slate-400 py-8">
+              <p>No recent registrations</p>
+            </div>
+          </div>
+        </div>
+
+       </div>
       </div>
-    </div>
   `
 })
 export class AdminDashboardComponent implements OnInit {
@@ -297,6 +361,7 @@ export class AdminDashboardComponent implements OnInit {
   topEmployers = signal<{ name: string, count: number }[]>([]);
   hiresByInstitution = signal<{ name: string, count: number }[]>([]);
   experience = signal<{ range: string, count: number }[]>([]);
+  recentRegistrations = signal<Registration[]>([]);
 
   private maxSkillCount = 1;
   private maxExpCount = 1;
@@ -307,6 +372,27 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.loadDashboardData();
+    this.loadAdminStats();
+  }
+
+  loadAdminStats() {
+    this.http.get<AdminStats>(`${environment.apiUrl}/analytics/admin`).subscribe({
+      next: (data) => {
+        this.recentRegistrations.set(data.recentRegistrations || []);
+      },
+      error: (err) => console.error('Failed to load admin stats:', err)
+    });
+  }
+
+  getRoleBadge(role: string): string {
+    switch (role) {
+      case 'employer': return 'Employer';
+      case 'candidate': return 'Candidate';
+      case 'institution_admin': return 'Institution Admin';
+      case 'institution_user': return 'Institution User';
+      case 'super_admin': return 'Super Admin';
+      default: return role;
+    }
   }
 
   loadDashboardData() {

@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, map, tap } from 'rxjs/operators';
-import { of, BehaviorSubject } from 'rxjs';
+// import { of, BehaviorSubject } from 'rxjs'; // Unused
 import { environment } from '../environments/environment';
 
 export interface User {
@@ -60,8 +60,5 @@ export class AuthService {
         return userStr ? JSON.parse(userStr) : null;
     }
 
-    getAuthHeaders() {
-        const user = this.currentUser();
-        return user?.token ? { Authorization: `Bearer ${user.token}` } : {};
-    }
+    // Method removed as AuthInterceptor handles headers
 }

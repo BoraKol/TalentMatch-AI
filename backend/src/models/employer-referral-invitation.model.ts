@@ -12,7 +12,7 @@ export interface IEmployerReferralInvitation extends Document {
 
 const EmployerReferralInvitationSchema: Schema = new Schema({
     employer: { type: Schema.Types.ObjectId, ref: 'Employer', required: true },
-    referralPerson: { type: Schema.Types.ObjectId, ref: 'ReferralPerson', required: true },
+    referralPerson: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     jobTitle: { type: String },
     status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
     message: { type: String },

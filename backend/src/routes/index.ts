@@ -25,7 +25,7 @@ router.use('/testimonials', testimonialRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/employment-types', employmentTypeRoutes);
 router.use('/skills', skillRoutes);
-router.use('/analytics', analyticsRoutes);
+
 router.use('/ai-matching', aiMatchingRoutes);
 router.use('/contact', contactRoutes);
 router.use('/applications', applicationRoutes);

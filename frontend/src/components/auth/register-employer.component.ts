@@ -1,9 +1,16 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+
+interface InstitutionOption {
+  _id: string;
+  name: string;
+  emailDomain: string;
+  institutionType: string;
+}
 
 @Component({
   selector: 'app-register-employer',
@@ -104,6 +111,42 @@ import { environment } from '../../environments/environment';
                </div>
               </div>
 
+              <!-- Section: Institution Selection -->
+              <div>
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                   <span class="w-8 h-px bg-slate-300"></span> Institution <span class="w-full h-px bg-slate-100"></span>
+                </h3>
+                <div class="space-y-4">
+                  <div class="space-y-1">
+                    <label class="block text-sm font-medium text-slate-700">Select Your Institution *</label>
+                    <p class="text-xs text-slate-500 mb-2">Your employer account will be linked to this institution</p>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                        </svg>
+                      </div>
+                      <select formControlName="institutionId" 
+                              class="appearance-none w-full pl-10 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200">
+                          <option value="">-- Select an Institution --</option>
+                          <option *ngFor="let inst of institutions()" [value]="inst._id">
+                            {{ inst.name }} ({{ inst.institutionType }})
+                          </option>
+                      </select>
+                      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
+                    <p *ngIf="registerForm.get('institutionId')?.touched && registerForm.get('institutionId')?.hasError('required')" class="mt-1 text-xs text-red-500">
+                      Please select an institution.
+                    </p>
+                    <p *ngIf="institutions().length === 0 && !loadingInstitutions()" class="mt-2 text-xs text-amber-600">
+                      No institutions available. Please contact the administrator.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <!-- Section: Company Details -->
               <div>
                 <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -119,20 +162,25 @@ import { environment } from '../../environments/environment';
                         </svg>
                       </div>
                       <input formControlName="companyName" type="text" 
+                             class="w-full pl-10 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200"
                              placeholder="Tech Solutions Inc">
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1">
-                      <label class="block text-sm font-medium text-slate-700">Company Type</label>
+                      <label class="block text-sm font-medium text-slate-700">Industry</label>
                       <div class="relative">
-                        <select formControlName="companyType" 
+                        <select formControlName="industry" 
                                 class="appearance-none w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200">
-                            <option value="Corporate">Corporate</option>
-                            <option value="Startup">Startup</option>
-                            <option value="Agency">Recruitment Agency</option>
-                            <option value="Consulting">Consulting Firm</option>
-                            <option value="NonProfit">Non-Profit</option>
+                            <option value="">Select Industry</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Education">Education</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Consulting">Consulting</option>
+                            <option value="Other">Other</option>
                         </select>
                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -140,33 +188,10 @@ import { environment } from '../../environments/environment';
                       </div>
                     </div>
                     <div class="space-y-1">
-                      <label class="block text-sm font-medium text-slate-700">Company Size</label>
-                      <div class="relative">
-                        <select formControlName="companySize" 
-                                class="appearance-none w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200">
-                            <option value="1-10">1-10 employees</option>
-                            <option value="11-50">11-50 employees</option>
-                            <option value="51-200">51-200 employees</option>
-                            <option value="201-500">201-500 employees</option>
-                            <option value="501+">501+ employees</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-sm font-medium text-slate-700">Website <span class="text-slate-400 font-normal">(Optional)</span></label>
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                        </svg>
-                      </div>
+                      <label class="block text-sm font-medium text-slate-700">Website <span class="text-slate-400 font-normal">(Optional)</span></label>
                       <input formControlName="companyWebsite" type="url" 
-                             class="w-full pl-10 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200"
-                             placeholder="https://www.company.com">
+                             class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 px-4 py-3 transition-all duration-200"
+                             placeholder="https://company.com">
                     </div>
                   </div>
                </div>
@@ -210,7 +235,7 @@ import { environment } from '../../environments/environment';
     </div>
   `
 })
-export class RegisterEmployerComponent {
+export class RegisterEmployerComponent implements OnInit {
   private fb = inject(FormBuilder);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -218,17 +243,36 @@ export class RegisterEmployerComponent {
   isLoading = signal(false);
   errorMessage = signal('');
   showPassword = signal(false);
+  institutions = signal<InstitutionOption[]>([]);
+  loadingInstitutions = signal(true);
 
   registerForm = this.fb.group({
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(6)]],
+    institutionId: ['', Validators.required],
     companyName: ['', Validators.required],
-    companyType: ['Corporate', Validators.required],
-    companySize: ['11-50'],
+    industry: [''],
     companyWebsite: ['']
   });
+
+  ngOnInit() {
+    this.loadInstitutions();
+  }
+
+  loadInstitutions() {
+    this.loadingInstitutions.set(true);
+    this.http.get<InstitutionOption[]>(`${environment.apiUrl}/analytics/institutions/active`).subscribe({
+      next: (data) => {
+        this.institutions.set(data);
+        this.loadingInstitutions.set(false);
+      },
+      error: () => {
+        this.loadingInstitutions.set(false);
+      }
+    });
+  }
 
   togglePassword() {
     this.showPassword.update(v => !v);

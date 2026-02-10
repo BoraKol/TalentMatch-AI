@@ -15,7 +15,7 @@ import { environment } from '../../environments/environment';
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-          <a routerLink="/employer/dashboard" class="inline-flex items-center text-sm text-slate-600 hover:text-emerald-600 mb-4">
+          <a [routerLink]="dashboardLink()" class="inline-flex items-center text-sm text-slate-600 hover:text-emerald-600 mb-4">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -176,6 +176,9 @@ export class JobPostComponent {
   requiredSkills = signal<string[]>([]);
   preferredSkills = signal<string[]>([]);
 
+  // Dynamic dashboard link based on user role
+  dashboardLink = signal('/employer/dashboard');
+
   private getCompanyName(): string {
     const user = this.authService.currentUser();
     return user?.companyName || (user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '');
@@ -221,6 +224,13 @@ export class JobPostComponent {
   ];
 
   constructor() {
+    // Set dashboard link based on user role
+    const role = this.authService.currentUser()?.role;
+    if (role === 'institution_admin' || role === 'institution_user') {
+      this.dashboardLink.set('/institution/dashboard');
+    }
+
+    // Auto-fill company name
     effect(() => {
       const company = this.getCompanyName();
       if (company && this.jobForm) {

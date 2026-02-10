@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { config } from '../config';
+import { AuthRequest, AuthUser } from '../types/express';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
-
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -13,8 +13,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     const token = authHeader.split(' ')[1]; // Bearer <token>
 
     try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        // @ts-ignore
+        const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
         req.user = decoded;
         next();
     } catch (error) {
@@ -25,14 +24,20 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 // Alias for cleaner imports
 export const authMiddleware = authenticate;
 
-// Super Admin role check middleware
-export const superAdminMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    // @ts-ignore
-    const user = req.user;
+// Factory: role-based middleware
+export const requireRole = (...allowedRoles: string[]) => {
+    return (req: AuthRequest, res: Response, next: NextFunction) => {
+        const user = req.user;
 
-    if (!user || user.role !== 'super_admin') {
-        return res.status(403).json({ error: 'Access denied. Super Admin role required.' });
-    }
+        if (!user || !allowedRoles.includes(user.role)) {
+            return res.status(403).json({
+                error: `Access denied. Required role: ${allowedRoles.join(' or ')}`
+            });
+        }
 
-    next();
+        next();
+    };
 };
+
+// Convenience alias (kept for backward compat)
+export const superAdminMiddleware = requireRole('super_admin');

@@ -1,15 +1,148 @@
-import { Request, Response } from 'express';
-import { AnalyticsService } from '../services/analytics.service';
-import logger from '../utils/logger';
+import { Response } from 'express';
+import { AuthRequest } from '../types/express';
+import User from '../models/user.model';
+import Job from '../models/job.model';
+import Candidate from '../models/candidate.model';
+import Institution, { IInstitution } from '../models/institution.model';
+import Employer from '../models/employer.model';
+import Application from '../models/application.model';
 
-const analyticsService = new AnalyticsService();
+export class AnalyticsController {
 
-export const getDashboardData = async (req: Request, res: Response) => {
-    try {
-        const data = await analyticsService.getDashboardMetrics();
-        res.status(200).json(data);
-    } catch (error: any) {
-        logger.error(error.message);
-        res.status(500).json({ message: error.message });
+    // Institution Dashboard Stats
+    async getInstitutionStats(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user?.id;
+            const user = await User.findById(userId);
+
+            if (!user?.institution) {
+                res.status(400).json({ error: 'No institution linked to this user' });
+                return;
+            }
+
+            const institutionId = user.institution;
+
+            // 1. Get Institution Users IDs directly (for job query)
+            const institutionUsers = await User.find({ institution: institutionId }).select('_id');
+            const institutionUserIds = institutionUsers.map(u => u._id);
+
+            // 2. Parallel Count Queries
+            const [userCount, jobCount, candidateCount, employerCount, institution] = await Promise.all([
+                User.countDocuments({ institution: institutionId }),
+                Job.countDocuments({ postedBy: { $in: institutionUserIds } }),
+                Candidate.countDocuments({ institution: institutionId.toString() }),
+                Employer.countDocuments({ institution: institutionId }),
+                Institution.findById(institutionId)
+            ]);
+
+            res.json({
+                userCount,
+                maxUsers: institution?.maxUsers || 5,
+                jobCount,
+                candidateCount,
+                employerCount,
+                institutionName: institution?.name,
+                institutionStatus: institution?.status,
+                remainingSlots: (institution?.maxUsers || 5) - userCount
+            });
+        } catch (error: any) {
+            console.error('Institution Stats Error:', error);
+            res.status(500).json({ error: error.message });
+        }
     }
-};
+
+    // Employer Dashboard Stats
+    async getEmployerStats(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const userId = req.user?.id;
+
+            // Get jobs posted by this employer
+            const jobs = await Job.find({ postedBy: userId });
+            const jobIds = jobs.map(j => j._id);
+
+            // Get application/match stats
+            const [totalApplications, hiredCount] = await Promise.all([
+                Application.countDocuments({ job: { $in: jobIds } }),
+                Application.countDocuments({ job: { $in: jobIds }, status: 'hired' })
+            ]);
+
+            // Get user's institution info
+            const user = await User.findById(userId).populate<{ institution: IInstitution }>('institution');
+
+            res.json({
+                activeJobs: jobs.filter(j => j.isActive).length,
+                totalJobs: jobs.length,
+                totalApplications,
+                hiredCount,
+                matchRate: totalApplications > 0 ? Math.round((hiredCount / totalApplications) * 100) : 0,
+                institutionName: user?.institution?.name || 'Independent',
+                institutionId: user?.institution?._id || null
+            });
+        } catch (error: any) {
+            console.error('Employer Stats Error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Super Admin Overview Stats
+    async getAdminStats(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const [
+                totalInstitutions,
+                activeInstitutions,
+                totalEmployers,
+                totalCandidates,
+                totalJobs,
+                totalApplications,
+                recentRegistrations
+            ] = await Promise.all([
+                Institution.countDocuments(),
+                Institution.countDocuments({ status: 'active' }),
+                User.countDocuments({ role: 'employer' }),
+                User.countDocuments({ role: 'candidate' }),
+                Job.countDocuments(),
+                Application.countDocuments(),
+                User.find()
+                    .sort({ createdAt: -1 })
+                    .limit(10)
+                    .select('email firstName lastName role institution createdAt')
+                    .populate<{ institution: IInstitution }>('institution', 'name')
+            ]);
+
+            res.json({
+                totalInstitutions,
+                activeInstitutions,
+                totalEmployers,
+                totalCandidates,
+                totalJobs,
+                totalApplications,
+                recentRegistrations: recentRegistrations.map(u => ({
+                    id: u._id,
+                    email: u.email,
+                    name: `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+                    role: u.role,
+                    institutionName: u.institution?.name || null,
+                    registeredAt: u.createdAt
+                }))
+            });
+        } catch (error: any) {
+            console.error('Admin Stats Error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    }
+
+    // Get list of all institutions (for employer registration dropdown)
+    async getActiveInstitutions(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const institutions = await Institution.find({ status: 'active' })
+                .select('name emailDomain institutionType')
+                .sort({ name: 1 });
+
+            res.json(institutions);
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+}
+
+export const analyticsController = new AnalyticsController();

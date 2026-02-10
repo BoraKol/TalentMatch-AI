@@ -11,7 +11,7 @@ export interface ICandidateReferralInvitation extends Document {
 }
 
 const CandidateReferralInvitationSchema: Schema = new Schema({
-    referralPerson: { type: Schema.Types.ObjectId, ref: 'ReferralPerson', required: true },
+    referralPerson: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     candidate: { type: Schema.Types.ObjectId, ref: 'Candidate', required: true },
     jobTitle: { type: String },
     status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },

@@ -86,8 +86,8 @@ interface Job {
               </svg>
             </div>
             <div>
-              <div class="text-2xl font-bold text-slate-800">{{ candidates().length }}</div>
-              <div class="text-sm text-slate-500">Matched Candidates</div>
+              <div class="text-2xl font-bold text-slate-800">{{ employerStats().totalApplications }}</div>
+              <div class="text-sm text-slate-500">Applications</div>
             </div>
           </div>
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -97,8 +97,8 @@ interface Job {
               </svg>
             </div>
             <div>
-              <div class="text-2xl font-bold text-slate-800">{{ getHighMatchCount() }}</div>
-              <div class="text-sm text-slate-500">High Matches</div>
+              <div class="text-2xl font-bold text-slate-800">{{ employerStats().matchRate }}%</div>
+              <div class="text-sm text-slate-500">Match Rate</div>
             </div>
           </div>
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -192,19 +192,38 @@ export class EmployerDashboardComponent implements OnInit {
   isLoading = signal(true);
   candidates = signal<Candidate[]>([]);
   jobs = signal<Job[]>([]);
+  employerStats = signal({
+    activeJobs: 0,
+    totalJobs: 0,
+    totalApplications: 0,
+    hiredCount: 0,
+    matchRate: 0,
+    institutionName: '',
+    institutionId: null as string | null
+  });
 
   ngOnInit() {
-    this.loadCandidates();
     this.loadJobs();
+    this.loadEmployerAnalytics();
   }
 
-  loadCandidates() {
-    // No longer loading all candidates client-side
-    // Matching is done per-job via the 'View AI Matches' button which navigates to details page
-    this.isLoading.set(false);
+  loadEmployerAnalytics() {
+    this.http.get<any>(`${environment.apiUrl}/analytics/employer`).subscribe({
+      next: (data) => {
+        this.employerStats.set({
+          activeJobs: data.activeJobs || 0,
+          totalJobs: data.totalJobs || 0,
+          totalApplications: data.totalApplications || 0,
+          hiredCount: data.hiredCount || 0,
+          matchRate: data.matchRate || 0,
+          institutionName: data.institutionName || 'Independent',
+          institutionId: data.institutionId
+        });
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
   }
-
-  // Deterministic score removed - using Server Side AI now
 
   loadJobs() {
     this.http.get<Job[]>(`${environment.apiUrl}/jobs/my-jobs`).subscribe({

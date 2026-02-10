@@ -1,6 +1,6 @@
 import { BaseController } from './base.controller';
 import {
-    userService, candidateService, employerService, referralPersonService,
+    userService, candidateService, employerService,
     institutionService, schoolService, departmentService, programService,
     employerReferralInvitationService, candidateReferralInvitationService, notificationService
 } from '../services';
@@ -8,7 +8,7 @@ import {
 export const userController = new BaseController(userService);
 export const candidateController = new BaseController(candidateService);
 export const employerController = new BaseController(employerService);
-export const referralPersonController = new BaseController(referralPersonService);
+
 export const institutionController = new BaseController(institutionService);
 export const schoolController = new BaseController(schoolService);
 export const departmentController = new BaseController(departmentService);

@@ -60,7 +60,7 @@ import { environment } from '../../environments/environment';
                 </svg>
               </div>
               <div>
-                <p class="text-2xl font-bold text-slate-800">{{ stats().userCount }}/5</p>
+                <p class="text-2xl font-bold text-slate-800">{{ stats().userCount }}/{{ stats().maxUsers }}</p>
                 <p class="text-sm text-slate-500">Active Users</p>
               </div>
             </div>
@@ -98,12 +98,12 @@ import { environment } from '../../environments/environment';
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
               <div>
-                <p class="text-2xl font-bold text-slate-800">{{ stats().referralCount }}</p>
-                <p class="text-sm text-slate-500">Referrals</p>
+                <p class="text-2xl font-bold text-slate-800">{{ stats().employerCount }}</p>
+                <p class="text-sm text-slate-500">Employers</p>
               </div>
             </div>
           </div>
@@ -119,7 +119,7 @@ import { environment } from '../../environments/environment';
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
                 <span class="font-medium">Invite Team Member</span>
-                <span class="ml-auto text-xs bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full">{{ 5 - stats().userCount }} slots left</span>
+                <span class="ml-auto text-xs bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full">{{ stats().remainingSlots }} slots left</span>
               </a>
               <a routerLink="/institution/jobs/new" class="w-full flex items-center gap-3 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +149,7 @@ import { environment } from '../../environments/environment';
               </div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100">
                 <span class="text-slate-500">User Limit</span>
-                <span class="font-medium text-slate-800">5 users max</span>
+                <span class="font-medium text-slate-800">{{ stats().maxUsers }} users max</span>
               </div>
               <div class="flex justify-between items-center py-2">
                 <span class="text-slate-500">Status</span>
@@ -168,13 +168,27 @@ export class InstitutionDashboardComponent implements OnInit {
 
   stats = signal({
     userCount: 1,
+    maxUsers: 5,
     jobCount: 0,
     candidateCount: 0,
-    referralCount: 0
+    employerCount: 0,
+    remainingSlots: 4
   });
 
   ngOnInit() {
-    // Could fetch real stats here from backend
+    this.http.get<any>(`${environment.apiUrl}/analytics/institution`).subscribe({
+      next: (data) => {
+        this.stats.set({
+          userCount: data.userCount || 1,
+          maxUsers: data.maxUsers || 5,
+          jobCount: data.jobCount || 0,
+          candidateCount: data.candidateCount || 0,
+          employerCount: data.employerCount || 0,
+          remainingSlots: data.remainingSlots || 4
+        });
+      },
+      error: (err) => console.error('Failed to load institution stats:', err)
+    });
   }
 
   getRoleDisplay(): string {
@@ -184,3 +198,4 @@ export class InstitutionDashboardComponent implements OnInit {
     return role || 'Unknown';
   }
 }
+

@@ -1,10 +1,12 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../types/express';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import Invite, { InviteType } from '../models/admin-invite.model';
 import User from '../models/user.model';
 import Institution from '../models/institution.model';
 import Candidate from '../models/candidate.model';
+import { hashPassword } from '../utils/password';
 
 const MAX_USERS_PER_ORG = 5;
 
@@ -16,10 +18,10 @@ export class InviteController {
     }
 
     // Send invite (Super Admin can invite all types)
-    async sendInvite(req: Request, res: Response): Promise<void> {
+    async sendInvite(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { email, inviteType, institutionId } = req.body;
-            const inviterId = (req as any).user?.id;
+            const inviterId = req.user?.id;
 
             if (!email || !inviteType) {
                 res.status(400).json({ error: 'Email and inviteType are required' });
@@ -95,7 +97,7 @@ export class InviteController {
     }
 
     // Get pending invites (optionally filter by type)
-    async getPendingInvites(req: Request, res: Response): Promise<void> {
+    async getPendingInvites(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { type } = req.query;
 
@@ -120,7 +122,7 @@ export class InviteController {
     }
 
     // Verify invite token (public endpoint)
-    async verifyInvite(req: Request, res: Response): Promise<void> {
+    async verifyInvite(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { token } = req.params;
 
@@ -148,7 +150,7 @@ export class InviteController {
     }
 
     // Accept invite and create account based on type
-    async acceptInvite(req: Request, res: Response): Promise<void> {
+    async acceptInvite(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { token, firstName, lastName, password, ...additionalData } = req.body;
 
@@ -170,7 +172,8 @@ export class InviteController {
             }
 
             // Hash password
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await hashPassword(password);
+
 
             let user;
             let institution;
@@ -282,7 +285,7 @@ export class InviteController {
     }
 
     // Revoke/Cancel an invite
-    async revokeInvite(req: Request, res: Response): Promise<void> {
+    async revokeInvite(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { inviteId } = req.params;
 
@@ -300,7 +303,7 @@ export class InviteController {
     }
 
     // Get institution user count (for checking limits)
-    async getInstitutionUsers(req: Request, res: Response): Promise<void> {
+    async getInstitutionUsers(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { institutionId } = req.params;
 

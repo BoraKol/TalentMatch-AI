@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import User, { IUser } from '../models/user.model';
+import { hashPassword, comparePassword } from '../utils/password';
+import { generateToken } from '../utils/jwt';
+import User from '../models/user.model';
 import Candidate from '../models/candidate.model';
+import Employer from '../models/employer.model';
+import Institution from '../models/institution.model';
+import Invite from '../models/admin-invite.model';
 import { config } from '../config';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+// --- Controller ---
 
 export class AuthController {
 
@@ -13,6 +16,11 @@ export class AuthController {
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
+
+            if (!email || !password) {
+                res.status(400).json({ error: 'Email and password are required' });
+                return;
+            }
 
             // Check User
             const user = await User.findOne({ email });
@@ -28,21 +36,22 @@ export class AuthController {
             }
 
             // Verify Password
-            const isMatch = await bcrypt.compare(password, user.password || '');
+            const isMatch = await comparePassword(password, user.password || '');
             if (!isMatch) {
                 res.status(401).json({ error: 'Invalid credentials' });
                 return;
             }
 
             // Generate Token
-            const token = jwt.sign(
-                { id: user._id, email: user.email, role: user.role },
-                JWT_SECRET,
-                { expiresIn: '1d' }
-            );
+            const token = generateToken({
+                id: user._id,
+                email: user.email,
+                role: user.role
+            });
 
             // Populate institution details if available
             await user.populate('institution');
+            const institution = user.institution as any;
 
             res.json({
                 token,
@@ -52,8 +61,8 @@ export class AuthController {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     role: user.role,
-                    // @ts-ignore
-                    companyName: user.institution?.name
+                    institutionId: institution?._id || user.institution,
+                    companyName: institution?.name
                 }
             });
         } catch (error: any) {
@@ -66,6 +75,11 @@ export class AuthController {
         try {
             const { email, password, firstName, lastName, region, country, school, department, skills } = req.body;
 
+            if (!email || !password || !firstName || !lastName) {
+                res.status(400).json({ error: 'Email, password, firstName, and lastName are required' });
+                return;
+            }
+
             // Check existing
             const existing = await User.findOne({ email });
             if (existing) {
@@ -74,7 +88,7 @@ export class AuthController {
             }
 
             // Hash Password
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await hashPassword(password);
 
             // Create User
             const user = await User.create({
@@ -99,7 +113,6 @@ export class AuthController {
                 skills: skills || []
             });
 
-            // Auto-Login or just success
             res.status(201).json({ message: 'Candidate registered successfully' });
 
         } catch (error: any) {
@@ -107,10 +120,27 @@ export class AuthController {
         }
     }
 
-    // Register Employer (Institution Admin)
+    // Register Employer (linked to an Institution)
     async registerEmployer(req: Request, res: Response): Promise<void> {
         try {
-            const { email, password, firstName, lastName, companyName, companyWebsite, companyType } = req.body;
+            const { email, password, firstName, lastName, companyName, companyWebsite, industry, institutionId } = req.body;
+
+            // Require institutionId
+            if (!institutionId) {
+                res.status(400).json({ error: 'Institution selection is required. Please select the institution you belong to.' });
+                return;
+            }
+
+            // Validate institution exists and is active
+            const institution = await Institution.findById(institutionId);
+            if (!institution) {
+                res.status(400).json({ error: 'Selected institution not found.' });
+                return;
+            }
+            if (institution.status !== 'active') {
+                res.status(400).json({ error: 'Selected institution is not active.' });
+                return;
+            }
 
             // Check existing User
             const existing = await User.findOne({ email });
@@ -119,47 +149,42 @@ export class AuthController {
                 return;
             }
 
-            // Hash Password
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            // Extract email domain
-            const emailDomain = email.split('@')[1];
-
-            // Check if institution with this domain already exists
-            const Institution = require('../models/institution.model').default;
-            let institution = await Institution.findOne({ emailDomain });
-
-            // If institution doesn't exist, create a new one
-            if (!institution) {
-                institution = await Institution.create({
-                    name: companyName,
-                    type: companyType || 'Corporate',
-                    emailDomain,
-                    adminEmail: email,
-                    website: companyWebsite,
-                    status: 'active'
-                });
-            } else {
-                // Check 5-user limit for existing institution
-                const userCount = await User.countDocuments({ institution: institution._id });
-                if (userCount >= (institution.maxUsers || 5)) {
-                    res.status(400).json({ error: `Institution has reached maximum user limit (${institution.maxUsers || 5})` });
-                    return;
-                }
+            // Check 5-user limit for institution
+            const userCount = await User.countDocuments({ institution: institution._id });
+            if (userCount >= (institution.maxUsers || 5)) {
+                res.status(400).json({ error: `Institution has reached maximum user limit (${institution.maxUsers || 5})` });
+                return;
             }
 
-            // Create User
+            // Hash Password
+            const hashedPassword = await hashPassword(password);
+
+            // Create User with employer role
             const user = await User.create({
                 email,
                 password: hashedPassword,
                 firstName,
                 lastName,
-                role: 'institution_admin',
+                role: 'employer',
                 isActive: true,
                 institution: institution._id
             });
 
-            res.status(201).json({ message: 'Employer registered successfully', institutionId: institution._id });
+            // Create Employer record linked to institution
+            await Employer.create({
+                user: user._id,
+                institution: institution._id,
+                name: companyName || `${firstName} ${lastName}`,
+                industry: industry || '',
+                website: companyWebsite || '',
+                contactEmail: email
+            });
+
+            res.status(201).json({
+                message: 'Employer registered successfully',
+                institutionId: institution._id,
+                institutionName: institution.name
+            });
         } catch (error: any) {
             console.error('Register Employer Error:', error);
             res.status(400).json({ error: error.message });
@@ -171,16 +196,8 @@ export class AuthController {
         try {
             const { email, password, firstName, lastName, institutionName, institutionType, emailDomain, website } = req.body;
 
-            // List of public email domains that cannot be used for institution registration
-            const publicEmailDomains = [
-                'gmail.com', 'googlemail.com', 'hotmail.com', 'outlook.com', 'live.com',
-                'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'icloud.com', 'me.com', 'mac.com',
-                'aol.com', 'protonmail.com', 'proton.me', 'mail.com', 'zoho.com',
-                'gmx.com', 'gmx.net', 'yandex.com', 'tutanota.com'
-            ];
-
-            // Check if the provided email domain is a public email provider
-            if (publicEmailDomains.includes(emailDomain.toLowerCase())) {
+            // Validate public email domain (from centralized config)
+            if (config.publicEmailDomains.includes(emailDomain.toLowerCase())) {
                 res.status(400).json({
                     error: 'Public email domains (gmail, hotmail, etc.) cannot be used for institution registration. Please use your institutional email domain.'
                 });
@@ -204,7 +221,6 @@ export class AuthController {
             }
 
             // Check if institution with this email domain already exists
-            const Institution = require('../models/institution.model').default;
             const existingInstitution = await Institution.findOne({ emailDomain: emailDomain.toLowerCase() });
             if (existingInstitution) {
                 res.status(400).json({ error: 'An institution with this email domain already exists. Please contact your institution admin to get an invite.' });
@@ -212,7 +228,7 @@ export class AuthController {
             }
 
             // Hash Password
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const hashedPassword = await hashPassword(password);
 
             // Create Institution
             const institution = await Institution.create({
@@ -226,7 +242,7 @@ export class AuthController {
             });
 
             // Create User as institution_admin
-            const user = await User.create({
+            await User.create({
                 email,
                 password: hashedPassword,
                 firstName,
@@ -239,7 +255,7 @@ export class AuthController {
             res.status(201).json({
                 message: 'Institution registered successfully',
                 institutionId: institution._id,
-                remainingSlots: 4 // Admin takes 1 of 5 slots
+                remainingSlots: 4
             });
         } catch (error: any) {
             console.error('Register Institution Error:', error);
@@ -247,11 +263,28 @@ export class AuthController {
         }
     }
 
-    // Set Password (for Invitation flow: Institution Admin, Recruiter)
+    // Set Password (for Invitation flow — VALIDATES invite token)
     async setPassword(req: Request, res: Response): Promise<void> {
         try {
             const { email, password, inviteToken } = req.body;
-            // In a real app, inviteToken would be verified against DB or JWT
+
+            if (!email || !password || !inviteToken) {
+                res.status(400).json({ error: 'Email, password, and inviteToken are required' });
+                return;
+            }
+
+            // Verify invite token against DB
+            const invite = await Invite.findOne({
+                email,
+                token: inviteToken,
+                expiresAt: { $gt: new Date() },
+                usedAt: { $exists: false }
+            });
+
+            if (!invite) {
+                res.status(403).json({ error: 'Invalid or expired invite token' });
+                return;
+            }
 
             const user = await User.findOne({ email });
             if (!user) {
@@ -260,10 +293,13 @@ export class AuthController {
             }
 
             // Hash new password
-            const hashedPassword = await bcrypt.hash(password, 10);
-            user.password = hashedPassword;
+            user.password = await hashPassword(password);
             user.isActive = true;
             await user.save();
+
+            // Mark invite as used
+            invite.usedAt = new Date();
+            await invite.save();
 
             res.json({ message: 'Password set successfully. You can now login.' });
 
