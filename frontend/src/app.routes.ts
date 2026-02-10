@@ -33,6 +33,18 @@ export class AppRoutes {
                 {
                     path: 'profile/edit',
                     loadComponent: () => import('./components/candidate/candidate-profile-edit.component').then(m => m.CandidateProfileEditComponent)
+                },
+                {
+                    path: 'jobs',
+                    loadComponent: () => import('./components/candidate/job-discovery.component').then(m => m.JobDiscoveryComponent)
+                },
+                {
+                    path: 'applications',
+                    loadComponent: () => import('./components/candidate/my-applications.component').then(m => m.MyApplicationsComponent)
+                },
+                {
+                    path: 'saved',
+                    loadComponent: () => import('./components/candidate/saved-jobs.component').then(m => m.SavedJobsComponent)
                 }
             ]
         },
@@ -103,6 +115,10 @@ export class AppRoutes {
             children: [
                 { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
                 { path: 'dashboard', component: AdminDashboardComponent },
+                {
+                    path: 'referrals',
+                    loadComponent: () => import('./components/admin/referral-hub.component').then(m => m.ReferralHubComponent)
+                },
                 {
                     path: 'institutions',
                     children: [

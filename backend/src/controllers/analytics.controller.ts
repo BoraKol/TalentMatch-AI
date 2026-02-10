@@ -43,7 +43,7 @@ export class AnalyticsController {
                 employerCount,
                 institutionName: institution?.name,
                 institutionStatus: institution?.status,
-                remainingSlots: (institution?.maxUsers || 5) - userCount
+                remainingSlots: Math.max(0, (institution?.maxUsers || 5) - userCount)
             });
         } catch (error: any) {
             console.error('Institution Stats Error:', error);

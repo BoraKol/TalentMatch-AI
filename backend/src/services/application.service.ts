@@ -30,7 +30,7 @@ export class ApplicationService {
 
     async getCandidateApplications(candidateId: string): Promise<IApplication[]> {
         return await Application.find({ candidate: candidateId })
-            .populate('job', 'title company location type')
+            .populate('job', 'title company location employmentType salaryRange requiredSkills isActive createdAt')
             .sort({ createdAt: -1 });
     }
 }

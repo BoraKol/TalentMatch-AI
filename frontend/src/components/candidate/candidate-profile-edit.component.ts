@@ -164,11 +164,11 @@ import { environment } from '../../environments/environment';
             </div>
             
             <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                <div class="mb-4">
-                    <input #searchInput type="text" placeholder="Search skills..." (input)="filterSkills(searchInput.value)" class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 px-4 pl-10 transition-all">
-                    <div class="absolute mt-[-38px] ml-3 text-slate-400">
+                <div class="mb-4 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
+                    <input #searchInput type="text" placeholder="Search skills..." (input)="filterSkills(searchInput.value)" class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 px-4 pl-10 transition-all">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">

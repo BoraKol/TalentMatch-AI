@@ -4,15 +4,15 @@ import { RouterModule, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-    selector: 'app-admin-layout',
-    standalone: true,
-    imports: [CommonModule, RouterModule, RouterOutlet],
-    template: `
+  selector: 'app-admin-layout',
+  standalone: true,
+  imports: [CommonModule, RouterModule, RouterOutlet],
+  template: `
     <div class="min-h-screen bg-slate-50 flex">
       <!-- Sidebar -->
-      <aside class="w-64 bg-slate-900 text-white flex flex-col">
+      <aside class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 z-50 h-screen">
         <!-- Logo -->
-        <div class="p-6 border-b border-slate-700">
+        <div class="p-6 border-b border-slate-700 flex-shrink-0">
           <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
             TalentMatch AI
           </h1>
@@ -20,17 +20,26 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 p-4 space-y-1">
+        <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto custom-scrollbar">
           <a routerLink="/admin/dashboard" routerLinkActive="bg-slate-800 text-white"
-             class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+             class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
             Dashboard
           </a>
 
+          <!-- Referral Hub -->
+          <a routerLink="/admin/referrals" routerLinkActive="bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-amber-400 border-l-2 border-amber-400"
+             class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            🔓 Referral Hub
+          </a>
+
           <!-- Institutions -->
-          <div class="pt-4">
+          <div class="pt-4 flex-shrink-0">
             <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Institutions</p>
             <a routerLink="/admin/institutions/list" routerLinkActive="bg-slate-800 text-white"
                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
@@ -49,7 +58,7 @@ import { AuthService } from '../../services/auth.service';
           </div>
 
           <!-- Testimonials -->
-          <div class="pt-4">
+          <div class="pt-4 flex-shrink-0">
             <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Testimonials</p>
             <a routerLink="/admin/testimonials/list" routerLinkActive="bg-slate-800 text-white"
                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
@@ -68,7 +77,7 @@ import { AuthService } from '../../services/auth.service';
           </div>
 
           <!-- Settings -->
-          <div class="pt-4">
+          <div class="pt-4 pb-4 flex-shrink-0">
             <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Settings</p>
             <a routerLink="/admin/settings/algorithm" routerLinkActive="bg-slate-800 text-white"
                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
@@ -96,23 +105,23 @@ import { AuthService } from '../../services/auth.service';
         </nav>
 
         <!-- User Info -->
-        <div class="p-4 border-t border-slate-700">
+        <div class="p-4 border-t border-slate-700 bg-slate-900 flex-shrink-0 z-50">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
               SA
             </div>
-            <div class="flex-1">
-              <p class="text-sm font-medium">Super Admin</p>
-              <p class="text-xs text-slate-400">{{ authService.currentUser()?.email }}</p>
+            <div class="flex-1 overflow-hidden">
+              <p class="text-sm font-medium truncate">Super Admin</p>
+              <p class="text-xs text-slate-400 truncate">{{ authService.currentUser()?.email }}</p>
             </div>
           </div>
         </div>
       </aside>
 
-      <!-- Main Content -->
-      <div class="flex-1 flex flex-col">
+      <!-- Main Content Container with Margin for Sidebar -->
+      <div class="flex-1 flex flex-col ml-64 min-h-screen">
         <!-- Header -->
-        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
           <h2 class="text-lg font-semibold text-slate-800">Admin Panel</h2>
           <button (click)="logout()" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,7 +132,7 @@ import { AuthService } from '../../services/auth.service';
         </header>
 
         <!-- Page Content -->
-        <main class="flex-1 overflow-auto">
+        <main class="flex-1 overflow-auto p-6">
           <router-outlet></router-outlet>
         </main>
       </div>
@@ -131,10 +140,10 @@ import { AuthService } from '../../services/auth.service';
   `
 })
 export class AdminLayoutComponent {
-    authService = inject(AuthService);
-    private router = inject(Router);
+  authService = inject(AuthService);
+  private router = inject(Router);
 
-    logout() {
-        this.authService.logout();
-    }
+  logout() {
+    this.authService.logout();
+  }
 }

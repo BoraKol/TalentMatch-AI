@@ -6,7 +6,7 @@ import { AuthService } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
 
 interface JobMatch {
-  _id: string;
+  id: string;
   title: string;
   company: string;
   location: string;
@@ -30,8 +30,24 @@ interface CandidateProfile {
   bio?: string;
 }
 
+interface SkillGap {
+  skill: string;
+  jobsUnlocked: number;
+  exampleJobs: string[];
+  impact: 'high' | 'medium' | 'low';
+}
+
+interface SkillGapResponse {
+  currentSkills: string[];
+  gaps: SkillGap[];
+  totalJobs: number;
+  matchableJobs: number;
+}
+
 @Component({
-  // ... (selector, standalone, imports kept same)
+  selector: 'app-candidate-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <!-- Header -->
@@ -39,7 +55,6 @@ interface CandidateProfile {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center gap-3">
-              <!-- Consistent TM Logo (Blue for Candidate) -->
               <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
                 TM
               </div>
@@ -64,14 +79,18 @@ interface CandidateProfile {
       </header>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Welcome Banner (Replaces Profile Card) -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 mb-8 text-white shadow-xl shadow-blue-500/20">
-          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-8 mb-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
             <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">🔓</span>
+                <span class="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm uppercase tracking-wider">Unlocking Hidden Jobs</span>
+              </div>
               <h1 class="text-3xl font-bold">Welcome back, {{ user()?.firstName }}!</h1>
-              <p class="text-blue-100 mt-2 text-lg">Your profile is active. Let AI find the perfect job matches for you.</p>
+              <p class="text-blue-100 mt-2 text-lg">Your referral specialist is matching you with opportunities you'd never find on your own.</p>
               
-              <!-- Bio quick view -->
               <div *ngIf="profile()?.bio" class="mt-4 flex items-center gap-2 text-sm text-blue-100 bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm inline-block">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span class="italic max-w-xl truncate">"{{ profile()?.bio }}"</span>
@@ -85,6 +104,22 @@ interface CandidateProfile {
           </div>
         </div>
 
+        <!-- Navigation Tabs -->
+        <div class="flex flex-wrap gap-3 mb-8">
+          <button (click)="navigateTo('/candidate/jobs')" 
+                  class="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all transform hover:-translate-y-0.5">
+            🔓 Referred Positions
+          </button>
+          <button (click)="navigateTo('/candidate/applications')" 
+                  class="flex items-center gap-2 px-5 py-3 bg-white text-slate-700 rounded-xl font-semibold border border-slate-200 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 transition-all shadow-sm">
+            📋 Referral Status
+          </button>
+          <button (click)="navigateTo('/candidate/saved')" 
+                  class="flex items-center gap-2 px-5 py-3 bg-white text-slate-700 rounded-xl font-semibold border border-slate-200 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700 transition-all shadow-sm">
+            🔖 Saved Jobs
+          </button>
+        </div>
+
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -94,8 +129,8 @@ interface CandidateProfile {
               </svg>
             </div>
             <div>
-              <div class="text-2xl font-bold text-slate-800">{{ jobMatches().length }}</div>
-              <div class="text-sm text-slate-500">Matched Jobs</div>
+              <div class="text-2xl font-bold text-slate-800">{{ myReferralCount() }}</div>
+              <div class="text-sm text-slate-500">Referral Matches</div>
             </div>
           </div>
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -133,92 +168,109 @@ interface CandidateProfile {
           </div>
         </div>
 
-        <!-- Job Matches -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-slate-800">Top 3 AI Job Matches</h2>
-            <!-- View All Jobs button removed until route is implemented -->
-          </div>
-
-          <!-- Loading -->
-          <div *ngIf="isLoading()" class="flex justify-center py-12">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          </div>
-
-          <!-- Job Cards (Grid Layout) -->
-          <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div *ngFor="let job of jobMatches()" 
-                 class="group relative bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-xl hover:border-blue-200 transition-all duration-300 flex flex-col h-full">
-              
-              <!-- Card Header -->
-              <div class="flex justify-between items-start mb-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm">
-                  {{ job.company?.charAt(0) || 'C' }}
-                </div>
-                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"
-                      [class]="job.matchScore >= 80 ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 
-                               job.matchScore >= 60 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-600 border border-slate-200'">
-                  {{ job.matchScore }}% Match
-                </span>
-              </div>
-
-              <!-- Job Info -->
-              <div class="mb-4 flex-grow">
-                <h3 class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors line-clamp-2 mb-1">{{ job.title }}</h3>
-                <p class="text-slate-500 font-medium text-sm">{{ job.company }}</p>
-                
-                <div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-500">
-                  <span class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                    {{ job.location }}
-                  </span>
-                  <span class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    {{ job.type }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- AI Analysis -->
-              <div *ngIf="job.aiAnalysis" class="mb-4 p-3 bg-blue-50/50 rounded-xl border border-blue-100 text-xs text-blue-800 leading-relaxed">
-                <div class="flex items-center gap-1 text-blue-900 font-bold mb-1">
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  AI Insight
-                </div>
-                {{ job.aiAnalysis | slice:0:100 }}{{ job.aiAnalysis.length > 100 ? '...' : '' }}
-              </div>
-
-              <!-- Footer -->
-              <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
-                <div class="flex -space-x-1 overflow-hidden">
-                  <span *ngFor="let skill of job.skills?.slice(0, 3)" 
-                        class="inline-block w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] text-slate-500 font-medium"
-                        title="{{skill}}">
-                    {{ skill.charAt(0) }}
-                  </span>
-                  <span *ngIf="(job.skills?.length || 0) > 3" class="inline-block w-6 h-6 rounded-full bg-slate-50 border-2 border-white flex items-center justify-center text-[8px] text-slate-400 font-medium">
-                    +{{ (job.skills?.length || 0) - 3 }}
-                  </span>
-                </div>
-
-                <button (click)="applyToJob(job)" 
-                        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm rounded-lg font-bold shadow-md shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-                        [disabled]="isApplying(job._id)">
-                  {{ isApplying(job._id) ? 'Sending...' : 'Apply Now' }}
-                </button>
-              </div>
+        <!-- Two Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <!-- Job Matches (Left 2/3) -->
+          <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-slate-800">🔓 Your Referral Matches</h2>
+              <button (click)="navigateTo('/candidate/jobs')" class="text-sm text-amber-600 font-semibold hover:underline">View All Referrals →</button>
             </div>
 
-            <!-- Empty State -->
-            <div *ngIf="jobMatches().length === 0" class="col-span-full text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-              <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-slate-300">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+            <!-- Loading -->
+            <div *ngIf="isLoading()" class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            </div>
+
+            <!-- Job Cards -->
+            <div *ngIf="!isLoading()" class="space-y-4">
+              <div *ngFor="let job of jobMatches()" 
+                   class="group relative bg-slate-50 rounded-xl p-5 hover:bg-blue-50 hover:border-blue-200 border border-slate-100 transition-all duration-300">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex items-start gap-4 flex-1">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg shadow-sm flex-shrink-0">
+                      {{ job.company?.charAt(0) || 'C' }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{{ job.title }}</h3>
+                      <p class="text-slate-500 text-sm">{{ job.company }} · {{ job.location }}</p>
+                      
+                      <div *ngIf="job.aiAnalysis" class="mt-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100 text-xs text-blue-800">
+                        <span class="font-bold">⚡ AI:</span> {{ job.aiAnalysis | slice:0:80 }}{{ job.aiAnalysis.length > 80 ? '...' : '' }}
+                      </div>
+
+                      <div class="flex flex-wrap gap-1 mt-2">
+                        <span *ngFor="let skill of job.skills?.slice(0, 3)" class="px-2 py-0.5 bg-white text-slate-600 text-xs rounded-full border border-slate-200">{{ skill }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase"
+                          [class]="job.matchScore >= 80 ? 'bg-emerald-100 text-emerald-700' : job.matchScore >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'">
+                      {{ job.matchScore }}%
+                    </span>
+                    <button (click)="applyToJob(job)" 
+                            class="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg font-bold transition-colors disabled:opacity-60"
+                            [disabled]="isApplying(job.id)">
+                      {{ isApplying(job.id) ? '...' : 'Accept' }}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <h3 class="text-lg font-semibold text-slate-700 mb-1">No AI matches found yet</h3>
-              <p class="text-slate-500 text-sm max-w-sm mx-auto">Complete your profile bio and add more skills to help our AI find the best opportunities for you.</p>
-              <button class="mt-4 text-blue-600 font-semibold text-sm hover:underline">Update Profile</button>
+
+              <!-- Empty State -->
+              <div *ngIf="jobMatches().length === 0" class="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                <div class="text-3xl mb-3">🔓</div>
+                <h3 class="font-semibold text-slate-700 mb-1">No referral matches yet</h3>
+                <p class="text-slate-500 text-sm">Your referral specialist is working on finding the best opportunities for you. Complete your profile to help them.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Skill Gaps (Right 1/3) -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            <div class="flex items-center gap-2 mb-6">
+              <span class="text-xl">📊</span>
+              <h2 class="text-lg font-bold text-slate-800">Skills to Unlock More Jobs</h2>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="isLoadingGaps()" class="flex justify-center py-8">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            </div>
+
+            <!-- Skill Gap Items -->
+            <div *ngIf="!isLoadingGaps()" class="space-y-3">
+              <div *ngIf="skillGapData()?.matchableJobs !== undefined" class="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
+                <div class="text-sm text-blue-800">
+                  You match <span class="font-bold">{{ skillGapData()?.matchableJobs }}</span> of <span class="font-bold">{{ skillGapData()?.totalJobs }}</span> available jobs
+                </div>
+                <div class="mt-2 h-2 bg-blue-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-blue-600 rounded-full transition-all duration-500" [style.width.%]="getMatchablePercent()"></div>
+                </div>
+              </div>
+
+              <div *ngFor="let gap of skillGaps()" 
+                   class="p-3 rounded-xl border transition-all hover:shadow-sm"
+                   [class]="gap.impact === 'high' ? 'bg-red-50 border-red-100' : gap.impact === 'medium' ? 'bg-amber-50 border-amber-100' : 'bg-slate-50 border-slate-100'">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-semibold text-sm text-slate-800">{{ gap.skill }}</span>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                        [class]="gap.impact === 'high' ? 'bg-red-100 text-red-700' : gap.impact === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'">
+                    {{ gap.impact === 'high' ? '🔥' : gap.impact === 'medium' ? '⚡' : '💡' }} +{{ gap.jobsUnlocked }} jobs
+                  </span>
+                </div>
+                <div class="text-xs text-slate-500">
+                  e.g. {{ gap.exampleJobs?.slice(0, 2).join(', ') }}
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div *ngIf="skillGaps().length === 0 && !isLoadingGaps()" class="text-center py-8">
+                <div class="text-2xl mb-2">🎯</div>
+                <p class="text-sm text-slate-500">Add skills to your profile to see gap analysis.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -233,15 +285,27 @@ export class CandidateDashboardComponent implements OnInit {
 
   user = this.authService.currentUser;
   isLoading = signal(true);
+  isLoadingGaps = signal(true);
   profile = signal<CandidateProfile | null>(null);
   jobMatches = signal<JobMatch[]>([]);
-
+  skillGaps = signal<SkillGap[]>([]);
+  skillGapData = signal<SkillGapResponse | null>(null);
   applyingJobs = signal<Set<string>>(new Set());
+  myReferralCount = signal<number>(0);
 
   ngOnInit() {
+    console.log('Candidate dashboard init');
     this.loadProfile();
-    // Delay loading matches slightly to ensure profile is loaded first (optional)
     this.loadJobMatches();
+    this.loadSkillGaps();
+    this.loadMyReferralCount();
+  }
+
+  loadMyReferralCount() {
+    this.http.get<any[]>(`${environment.apiUrl}/referrals/my`).subscribe({
+      next: (referrals) => this.myReferralCount.set(referrals.length),
+      error: () => this.myReferralCount.set(0)
+    });
   }
 
   loadProfile() {
@@ -250,17 +314,11 @@ export class CandidateDashboardComponent implements OnInit {
       this.http.get<any>(`${environment.apiUrl}/candidates/user/${userId}`).subscribe({
         next: (data) => this.profile.set(data),
         error: () => {
-          // Set default profile from user
           this.profile.set({
             firstName: this.user()?.firstName || '',
             lastName: this.user()?.lastName || '',
             email: this.user()?.email || '',
-            skills: [],
-            experience: 0,
-            school: '',
-            department: '',
-            country: '',
-            region: ''
+            skills: [], experience: 0, school: '', department: '', country: '', region: ''
           });
         }
       });
@@ -269,20 +327,37 @@ export class CandidateDashboardComponent implements OnInit {
 
   loadJobMatches() {
     this.isLoading.set(true);
-    // Use new AI Recommendations endpoint
     this.http.get<JobMatch[]>(`${environment.apiUrl}/applications/recommended-jobs`).subscribe({
       next: (matches) => {
-        // Backend now returns strictly top 3 AI matches
         this.jobMatches.set(matches);
         this.isLoading.set(false);
       },
       error: () => {
-        console.error('Failed to load AI matches, falling back to all jobs');
-        // Fallback or empty state
         this.jobMatches.set([]);
         this.isLoading.set(false);
       }
     });
+  }
+
+  loadSkillGaps() {
+    this.isLoadingGaps.set(true);
+    this.http.get<SkillGapResponse>(`${environment.apiUrl}/job-discovery/skill-gaps`).subscribe({
+      next: (data) => {
+        this.skillGaps.set(data.gaps);
+        this.skillGapData.set(data);
+        this.isLoadingGaps.set(false);
+      },
+      error: () => {
+        this.skillGaps.set([]);
+        this.isLoadingGaps.set(false);
+      }
+    });
+  }
+
+  getMatchablePercent(): number {
+    const data = this.skillGapData();
+    if (!data || data.totalJobs === 0) return 0;
+    return Math.round((data.matchableJobs / data.totalJobs) * 100);
   }
 
   isApplying(jobId: string): boolean {
@@ -290,54 +365,28 @@ export class CandidateDashboardComponent implements OnInit {
   }
 
   applyToJob(job: JobMatch) {
-    if (this.isApplying(job._id)) return;
+    if (this.isApplying(job.id)) return;
+    this.applyingJobs.update(set => { const s = new Set(set); s.add(job.id); return s; });
 
-    this.applyingJobs.update(set => {
-      const newSet = new Set(set);
-      newSet.add(job._id);
-      return newSet;
-    });
-
-    const payload = {
-      jobId: job._id,
-      aiMatchScore: job.matchScore
-    };
-
-    this.http.post(`${environment.apiUrl}/applications/apply`, payload).subscribe({
+    this.http.post(`${environment.apiUrl}/applications/apply`, {
+      jobId: job.id, aiMatchScore: job.matchScore
+    }).subscribe({
       next: () => {
-        alert(`Successfully applied to ${job.title} at ${job.company}!`);
-        this.applyingJobs.update(set => {
-          const newSet = new Set(set);
-          newSet.delete(job._id);
-          return newSet;
-        });
+        alert(`Applied to ${job.title} at ${job.company}!`);
+        this.applyingJobs.update(set => { const s = new Set(set); s.delete(job.id); return s; });
       },
       error: (err) => {
-        alert(err.error?.error || 'Failed to apply. Please try again.');
-        this.applyingJobs.update(set => {
-          const newSet = new Set(set);
-          newSet.delete(job._id);
-          return newSet;
-        });
+        alert(err.error?.error || 'Failed to apply.');
+        this.applyingJobs.update(set => { const s = new Set(set); s.delete(job.id); return s; });
       }
     });
-  }
-
-  getInitials(): string {
-    const first = this.profile()?.firstName || this.user()?.firstName || '';
-    const last = this.profile()?.lastName || this.user()?.lastName || '';
-    return (first.charAt(0) + last.charAt(0)).toUpperCase();
-  }
-
-  editProfile() {
-    this.router.navigate(['/candidate/profile/edit']);
   }
 
   getHighMatchCount(): number {
     return this.jobMatches().filter(j => j.matchScore >= 80).length;
   }
 
-  logout() {
-    this.authService.logout();
-  }
+  navigateTo(path: string) { this.router.navigate([path]); }
+  editProfile() { this.router.navigate(['/candidate/profile/edit']); }
+  logout() { this.authService.logout(); }
 }

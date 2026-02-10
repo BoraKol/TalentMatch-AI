@@ -323,7 +323,7 @@ export class InviteController {
                     maxUsers: institution.maxUsers
                 },
                 currentCount: users.length,
-                remainingSlots: institution.maxUsers - users.length,
+                remainingSlots: Math.max(0, institution.maxUsers - users.length),
                 users
             });
         } catch (error: any) {

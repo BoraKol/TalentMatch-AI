@@ -60,8 +60,8 @@ import { environment } from '../../environments/environment';
                 </svg>
               </div>
               <div>
-                <p class="text-2xl font-bold text-slate-800">{{ stats().userCount }}/{{ stats().maxUsers }}</p>
-                <p class="text-sm text-slate-500">Active Users</p>
+                <p class="text-2xl font-bold" [class]="stats().userCount > stats().maxUsers ? 'text-red-600' : 'text-slate-800'">{{ Math.min(stats().userCount, stats().maxUsers) }}/{{ stats().maxUsers }}</p>
+                <p class="text-sm" [class]="stats().userCount > stats().maxUsers ? 'text-red-500' : 'text-slate-500'">{{ stats().userCount > stats().maxUsers ? 'Over Limit!' : 'Active Users' }}</p>
               </div>
             </div>
           </div>
@@ -114,13 +114,20 @@ import { environment } from '../../environments/environment';
           <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100">
             <h3 class="text-lg font-semibold text-slate-800 mb-4">Quick Actions</h3>
             <div class="space-y-3">
-              <a routerLink="/institution/team/invite" class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
+              <a *ngIf="stats().remainingSlots > 0" routerLink="/institution/team/invite" class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
                 <span class="font-medium">Invite Team Member</span>
                 <span class="ml-auto text-xs bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full">{{ stats().remainingSlots }} slots left</span>
               </a>
+              <div *ngIf="stats().remainingSlots <= 0" class="w-full flex items-center gap-3 px-4 py-3 bg-red-50 text-red-600 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <span class="font-medium">User limit reached</span>
+                <span class="ml-auto text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full">{{ stats().maxUsers }}/{{ stats().maxUsers }} max</span>
+              </div>
               <a routerLink="/institution/jobs/new" class="w-full flex items-center gap-3 px-4 py-3 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -165,6 +172,7 @@ import { environment } from '../../environments/environment';
 export class InstitutionDashboardComponent implements OnInit {
   authService = inject(AuthService);
   private http = inject(HttpClient);
+  Math = Math; // Expose for template
 
   stats = signal({
     userCount: 1,
@@ -178,13 +186,15 @@ export class InstitutionDashboardComponent implements OnInit {
   ngOnInit() {
     this.http.get<any>(`${environment.apiUrl}/analytics/institution`).subscribe({
       next: (data) => {
+        const maxUsers = data.maxUsers || 5;
+        const userCount = data.userCount || 1;
         this.stats.set({
-          userCount: data.userCount || 1,
-          maxUsers: data.maxUsers || 5,
+          userCount,
+          maxUsers,
           jobCount: data.jobCount || 0,
           candidateCount: data.candidateCount || 0,
           employerCount: data.employerCount || 0,
-          remainingSlots: data.remainingSlots || 4
+          remainingSlots: Math.max(0, data.remainingSlots ?? (maxUsers - userCount))
         });
       },
       error: (err) => console.error('Failed to load institution stats:', err)

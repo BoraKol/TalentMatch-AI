@@ -13,6 +13,9 @@ import aiMatchingRoutes from './ai-matching.routes';
 import contactRoutes from './contact.routes';
 import applicationRoutes from './application.routes';
 import employerRoutes from './employer.routes';
+import jobDiscoveryRoutes from './job-discovery.routes';
+import savedJobRoutes from './saved-job.routes';
+import referralRoutes from './referral.routes';
 
 const router = Router();
 
@@ -30,6 +33,9 @@ router.use('/ai-matching', aiMatchingRoutes);
 router.use('/contact', contactRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/employers', employerRoutes);
+router.use('/job-discovery', jobDiscoveryRoutes);
+router.use('/saved-jobs', savedJobRoutes);
+router.use('/referrals', referralRoutes);
 
 export default router;
 
