@@ -43,3 +43,10 @@ const CandidateSchema: Schema = new Schema({
 }, { timestamps: true });
 
 export default mongoose.model<ICandidate>('Candidate', CandidateSchema);
+
+// Indexes
+CandidateSchema.index({ user: 1 }); // Fast profile lookup by user ID
+CandidateSchema.index({ email: 1 });
+CandidateSchema.index({ skills: 1 }); // Multikey for skill-based searches
+CandidateSchema.index({ status: 1 });
+

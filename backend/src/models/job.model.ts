@@ -34,3 +34,11 @@ const JobSchema: Schema = new Schema({
 
 export default mongoose.model<IJob>('Job', JobSchema);
 
+// Indexes for common queries
+JobSchema.index({ company: 1 });
+JobSchema.index({ location: 1 });
+JobSchema.index({ employmentType: 1 });
+JobSchema.index({ requiredSkills: 1 }); // Multikey index for skill matching
+JobSchema.index({ isActive: 1, createdAt: -1 }); // for listing active jobs sorted by date
+
+

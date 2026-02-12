@@ -17,7 +17,7 @@ import { environment } from '../../environments/environment';
           <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
               <div class="flex items-center gap-2">
-                <img src="assets/favicon.jpg" alt="TalentMatch Logo" class="w-8 h-8 rounded-lg object-cover shadow-sm">
+                <img src="/favicon.jpg" alt="TalentMatch Logo" class="w-8 h-8 rounded-lg object-cover shadow-sm">
                 <span class="text-xl font-bold text-slate-800">TalentMatch AI</span>
                 <span class="ml-2 px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Institution</span>
               </div>

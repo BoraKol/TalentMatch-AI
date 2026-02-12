@@ -51,6 +51,16 @@ export class EmailService {
 
         const sendPromise = this.transporter.sendMail(mailOptions);
 
+        // Critical: Attach a catch handler to existing promise to prevent 
+        // "UnhandledPromiseRejection" if the timeout wins but this fails later.
+        sendPromise.catch((e) => {
+            // If the timeout won, we don't care about this error anymore, 
+            // but we must catch it to prevent Node process crash.
+            if (process.env.NODE_ENV === 'development') {
+                // console.debug('BACKGROUND: Late email failure caught (safely ignored):', e.message);
+            }
+        });
+
         return Promise.race([sendPromise, timeoutPromise]);
     }
 
@@ -146,6 +156,50 @@ export class EmailService {
         }
     }
 
+    async sendReferralNotification(to: string, candidateName: string, jobTitle: string, companyName: string, referralId: string) {
+        console.log(`📧 Preparing to send referral notification to ${to}`);
+
+        if (!this.transporter) {
+            this.logMockReferral(to, jobTitle, companyName);
+            return { messageId: 'mock-id-' + Date.now() };
+        }
+
+        try {
+            const mailOptions = {
+                from: '"TalentMatch AI" <referrals@talentmatch.ai>',
+                to: to,
+                subject: `You've been referred to a role: ${jobTitle}`,
+                text: `Good news ${candidateName}!\n\nYour TalentMatch Referral Specialist has matched you with a new opportunity: ${jobTitle} at ${companyName}.\n\nLog in to your dashboard to view the details and accept the referral.\n\nBest,\nTalentMatch AI Team`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; background-color: #f9f9f9; border-radius: 10px;">
+                        <h2 style="color: #ea580c;">Good News! 🔓</h2>
+                        <p>Hello <strong>${candidateName}</strong>,</p>
+                        <p>Your Referral Specialist has matched you with a hidden opportunity that fits your profile perfectly.</p>
+                        
+                        <div style="background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #ea580c; margin: 20px 0;">
+                            <p style="margin: 0; font-size: 16px; font-weight: bold;">${jobTitle}</p>
+                            <p style="margin: 5px 0 0 0; color: #64748b;">${companyName}</p>
+                        </div>
+
+                        <p>Log in to your dashboard to review the AI analysis and accept the referral.</p>
+                        <br/>
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:4200'}/candidate/jobs" style="background: linear-gradient(to right, #f59e0b, #ea580c); color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Referral</a>
+                        <br/><br/>
+                        <p style="color: #94a3b8; font-size: 12px;">TalentMatch AI - Unlocking the Hidden Job Market</p>
+                    </div>
+                `
+            };
+
+            const info = await this.sendMailWithTimeout(mailOptions);
+            console.log(`📧 Email sent: ${info.messageId}`);
+            return info;
+        } catch (error) {
+            console.error('❌ Error sending referral email:', error);
+            this.logMockReferral(to, jobTitle, companyName);
+            return { messageId: 'mock-fallback-' + Date.now() };
+        }
+    }
+
     private logMockEmail(options: any) {
         console.log('---------------------------------------------------');
         console.log('📧 [MOCK EMAIL SENT]');
@@ -161,6 +215,15 @@ export class EmailService {
         console.log('📧 [MOCK EMAIL SENT - INTERVIEW INVITE]');
         console.log(`To: ${to}`);
         console.log(`Subject: Interview Invitation: ${jobTitle}`);
+        console.log('---------------------------------------------------');
+    }
+
+    private logMockReferral(to: string, jobTitle: string, companyName: string) {
+        console.log('---------------------------------------------------');
+        console.log('📧 [MOCK EMAIL SENT - REFERRAL NOTIFICATION]');
+        console.log(`To: ${to}`);
+        console.log(`Subject: You've been referred to a role: ${jobTitle}`);
+        console.log(`Company: ${companyName}`);
         console.log('---------------------------------------------------');
     }
 }

@@ -55,8 +55,7 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
             return result;
         } catch (error) {
             console.error('Gemini Match Error', error);
-            // Fallback could be implemented here or handled by caller
-            throw error;
+            throw error; // Re-throw to allow fallback
         }
     }
 
@@ -75,7 +74,7 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
             return this.enrichJobMatches(aiMatches, jobs).slice(0, 3);
         } catch (error) {
             console.error('Gemini Candidate Match Error', error);
-            return [];
+            throw error; // Re-throw to allow fallback in service
         }
     }
 

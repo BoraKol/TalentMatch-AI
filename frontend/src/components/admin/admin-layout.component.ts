@@ -13,7 +13,7 @@ import { AuthService } from '../../services/auth.service';
       <aside class="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 z-50 h-screen">
         <!-- Logo -->
         <div class="p-6 border-b border-slate-700 flex-shrink-0 flex items-center gap-3">
-          <img src="assets/favicon.jpg" alt="TalentMatch Logo" class="w-10 h-10 rounded-xl object-cover">
+          <img src="/favicon.jpg" alt="TalentMatch Logo" class="w-10 h-10 rounded-xl object-cover">
           <div>
             <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               TalentMatch AI
