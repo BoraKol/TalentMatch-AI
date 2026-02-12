@@ -1,11 +1,10 @@
 
-import { hashPassword, comparePassword } from '../utils/password';
+import { comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
-import User from '../models/user.model';
-import Candidate from '../models/candidate.model';
-import Employer from '../models/employer.model';
-import Institution from '../models/institution.model';
-import Invite from '../models/admin-invite.model';
+import { userRepository, UserRepository } from '../repositories/user.repository';
+import { institutionRepository, InstitutionRepository } from '../repositories/institution.repository';
+import { userFactory, UserFactory } from './user-factory.service';
+import Invite from '../models/admin-invite.model'; // Still needed for setPassword lookup temporarily
 import { config } from '../config';
 
 import {
@@ -17,18 +16,26 @@ import {
 } from '../validators/auth.validator';
 
 export class AuthService {
+    private userRepo: UserRepository;
+    private institutionRepo: InstitutionRepository;
+    private factory: UserFactory;
+
+    constructor() {
+        this.userRepo = userRepository;
+        this.institutionRepo = institutionRepository;
+        this.factory = userFactory;
+    }
 
     async login(email: string, password?: string) {
-        // Validation
         await LoginSchema.parseAsync({ email, password });
 
-        const user = await User.findOne({ email });
+        const user = await this.userRepo.findByEmail(email);
         if (!user) {
             throw new Error('Invalid credentials');
         }
 
         if (!user.isActive) {
-            const error = new Error('Account is inactive. Please contact admin or check email.');
+            const error = new Error('Your account is pending Super Admin approval. Please check back later.');
             (error as any).statusCode = 403;
             throw error;
         }
@@ -62,47 +69,31 @@ export class AuthService {
     }
 
     async registerCandidate(data: any) {
-        // Validation
         const validated = await RegisterCandidateSchema.parseAsync(data);
-        const { email, password, firstName, lastName, region, country, school, department, skills } = validated;
+        const { email, password, firstName, lastName, ...profileData } = validated;
 
-        const existing = await User.findOne({ email });
+        const existing = await this.userRepo.findByEmail(email);
         if (existing) {
             throw new Error('Email already exists');
         }
 
-        const hashedPassword = await hashPassword(password);
-
-        const user = await User.create({
+        await this.factory.createUser({
             email,
-            password: hashedPassword,
+            password,
             firstName,
             lastName,
             role: 'candidate',
-            isActive: true
-        });
-
-        await Candidate.create({
-            user: user._id,
-            firstName,
-            lastName,
-            email,
-            region,
-            country,
-            school,
-            department,
-            skills: skills || []
+            additionalData: profileData
         });
 
         return { message: 'Candidate registered successfully' };
     }
 
     async registerEmployer(data: any) {
-        // Validation
         const validated = await RegisterEmployerSchema.parseAsync(data);
-        const { email, password, firstName, lastName, companyName, companyWebsite, industry, institutionId } = validated;
+        const { email, password, firstName, lastName, institutionId, ...companyData } = validated;
 
-        const institution = await Institution.findById(institutionId);
+        const institution = await this.institutionRepo.findOne(institutionId);
         if (!institution) {
             throw new Error('Selected institution not found.');
         }
@@ -110,35 +101,24 @@ export class AuthService {
             throw new Error('Selected institution is not active.');
         }
 
-        const existing = await User.findOne({ email });
+        const existing = await this.userRepo.findByEmail(email);
         if (existing) {
             throw new Error('Email already exists');
         }
 
-        const userCount = await User.countDocuments({ institution: institution._id });
+        const userCount = await this.userRepo.count({ institution: institution._id });
         if (userCount >= (institution.maxUsers || 5)) {
             throw new Error(`Institution has reached maximum user limit (${institution.maxUsers || 5})`);
         }
 
-        const hashedPassword = await hashPassword(password);
-
-        const user = await User.create({
+        await this.factory.createUser({
             email,
-            password: hashedPassword,
+            password,
             firstName,
             lastName,
             role: 'employer',
-            isActive: true,
-            institution: institution._id
-        });
-
-        await Employer.create({
-            user: user._id,
-            institution: institution._id,
-            name: companyName || `${firstName} ${lastName}`,
-            industry: industry || '',
-            website: companyWebsite || '',
-            contactEmail: email
+            institutionId: institution._id as string,
+            additionalData: companyData
         });
 
         return {
@@ -149,49 +129,46 @@ export class AuthService {
     }
 
     async registerInstitution(data: any) {
-        // Validation
         const validated = await RegisterInstitutionSchema.parseAsync(data);
         const { email, password, firstName, lastName, institutionName, institutionType, emailDomain, website } = validated;
 
         if (config.publicEmailDomains.includes(emailDomain.toLowerCase())) {
-            throw new Error('Public email domains (gmail, hotmail, etc.) cannot be used for institution registration. Please use your institutional email domain.');
+            throw new Error('Public email domains cannot be used for institution registration.');
         }
 
         const adminEmailDomain = email.split('@')[1];
         if (adminEmailDomain.toLowerCase() !== emailDomain.toLowerCase()) {
-            throw new Error(`Your email domain (${adminEmailDomain}) must match the institution's email domain (${emailDomain}).`);
+            throw new Error(`Your email domain (${adminEmailDomain}) must match the institution's domain (${emailDomain}).`);
         }
 
-        const existing = await User.findOne({ email });
-        if (existing) {
+        const existingUser = await this.userRepo.findByEmail(email);
+        if (existingUser) {
             throw new Error('Email already exists');
         }
 
-        const existingInstitution = await Institution.findOne({ emailDomain: emailDomain.toLowerCase() });
+        const existingInstitution = await this.institutionRepo.findByEmailDomain(emailDomain);
         if (existingInstitution) {
-            throw new Error('An institution with this email domain already exists. Please contact your institution admin to get an invite.');
+            throw new Error('An institution with this email domain already exists.');
         }
 
-        const hashedPassword = await hashPassword(password);
-
-        const institution = await Institution.create({
+        const institution = await this.institutionRepo.create({
             name: institutionName,
-            institutionType: institutionType || 'university', // Using validated data which already defaults via enum/optional if we set defaults in schema, but here we keep optional
+            institutionType: (institutionType as any) || 'university',
             emailDomain,
             adminEmail: email,
             website,
             maxUsers: 5,
-            status: 'active'
+            status: 'pending'
         });
 
-        await User.create({
+        await this.factory.createUser({
             email,
-            password: hashedPassword,
+            password,
             firstName,
             lastName,
             role: 'institution_admin',
-            isActive: true,
-            institution: institution._id
+            institutionId: institution._id as string,
+            isActive: false
         });
 
         return {
@@ -202,10 +179,10 @@ export class AuthService {
     }
 
     async setPassword(data: any) {
-        // Validation
         const validated = await SetPasswordSchema.parseAsync(data);
         const { email, password, inviteToken } = validated;
 
+        // Note: Keeping Invite model here temporarily for setPassword logic
         const invite = await Invite.findOne({
             email,
             token: inviteToken,
@@ -219,13 +196,14 @@ export class AuthService {
             throw error;
         }
 
-        const user = await User.findOne({ email });
+        const user = await this.userRepo.findByEmail(email);
         if (!user) {
             const error = new Error('User not found');
             (error as any).statusCode = 404;
             throw error;
         }
 
+        const { hashPassword } = await import('../utils/password');
         user.password = await hashPassword(password);
         user.isActive = true;
         await user.save();
@@ -238,3 +216,4 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
+

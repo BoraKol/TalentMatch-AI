@@ -15,3 +15,4 @@ export class CandidateRepository extends BaseRepository<ICandidate> {
         return null;
     }
 }
+export const candidateRepository = new CandidateRepository();

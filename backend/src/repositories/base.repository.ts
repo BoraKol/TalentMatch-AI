@@ -1,17 +1,7 @@
-import mongoose, { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
+import { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
+import { IBaseRepository } from './interfaces/repository.interface';
 
-export interface IRead<T> {
-    find(item: FilterQuery<T>): Promise<T[]>;
-    findOne(id: string): Promise<T | null>;
-}
-
-export interface IWrite<T> {
-    create(item: T): Promise<T>;
-    update(id: string, item: UpdateQuery<T>): Promise<T | null>;
-    delete(id: string): Promise<boolean>;
-}
-
-export abstract class BaseRepository<T extends Document> implements IRead<T>, IWrite<T> {
+export abstract class BaseRepository<T extends Document> implements IBaseRepository<T> {
     private _model: Model<T>;
 
     constructor(schemaModel: Model<T>) {
@@ -19,8 +9,7 @@ export abstract class BaseRepository<T extends Document> implements IRead<T>, IW
     }
 
     async create(item: Partial<T>): Promise<T> {
-        const createdItem = new this._model(item);
-        return await createdItem.save();
+        return await this._model.create(item);
     }
 
     async retrieve(): Promise<T[]> {
@@ -36,11 +25,20 @@ export abstract class BaseRepository<T extends Document> implements IRead<T>, IW
         return !!result;
     }
 
-    async find(item: FilterQuery<T>): Promise<T[]> {
-        return await this._model.find(item).exec();
+    async find(filter: FilterQuery<T>): Promise<T[]> {
+        return await this._model.find(filter).exec();
     }
 
     async findOne(id: string): Promise<T | null> {
         return await this._model.findById(id).exec();
     }
+
+    async findOneByFilter(filter: FilterQuery<T>): Promise<T | null> {
+        return await this._model.findOne(filter).exec();
+    }
+
+    async count(filter: FilterQuery<T>): Promise<number> {
+        return await this._model.countDocuments(filter).exec();
+    }
 }
+

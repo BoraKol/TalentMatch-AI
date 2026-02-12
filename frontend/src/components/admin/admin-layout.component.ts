@@ -32,14 +32,16 @@ import { AuthService } from '../../services/auth.service';
             Dashboard
           </a>
 
-          <!-- Referral Hub -->
-          <a routerLink="/admin/referrals" routerLinkActive="bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-amber-400 border-l-2 border-amber-400"
+          <!-- Approval Queue -->
+          <a routerLink="/admin/approvals" routerLinkActive="bg-emerald-600/20 text-emerald-400 border-l-2 border-emerald-400"
              class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex-shrink-0">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            🔓 Referral Hub
+            Approval Queue
           </a>
+
+          <!-- Referral Hub -->
 
           <!-- Institutions -->
           <div class="pt-4 flex-shrink-0">

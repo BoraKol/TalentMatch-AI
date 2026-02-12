@@ -6,7 +6,10 @@ export interface ICandidate extends Document {
     lastName: string;
     email: string;
     phone?: string;
-    skills: string[];
+    skills: string[]; // Legacy
+    primarySkills: string[];
+    secondarySkills: string[];
+    softSkills: string[];
     experience: number; // Years
     currentTitle?: string;
     status: 'pending' | 'interviewing' | 'hired' | 'rejected';
@@ -37,6 +40,9 @@ const CandidateSchema: Schema = new Schema({
     region: { type: String },
     country: { type: String },
     skills: [{ type: String }],
+    primarySkills: [{ type: String }],
+    secondarySkills: [{ type: String }],
+    softSkills: [{ type: String }],
     experience: { type: Number, default: 0 },
     resumeUrl: { type: String },
     bio: { type: String },

@@ -3,45 +3,37 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config } from './config';
 import logger from './utils/logger';
-import healthRoutes from './routes/health.routes';
-import analyticsRoutes from './routes/analytics.routes';
-import adminInviteRoutes from './routes/admin-invite.routes';
 import apiRouter from './routes';
-import { inviteCandidate } from './controllers/custom.controller';
-import { seedDatabase } from './controllers/seed.controller';
-import { authenticate, superAdminMiddleware } from './middleware/auth.middleware';
+import { authRateLimiter, apiRateLimiter } from './middleware/rate-limit.middleware';
+import { errorHandler } from './middleware/error.middleware';
 
 const app = express();
 
-// Middleware
+// Security Middleware
 app.use(helmet());
 app.use(cors({
-    origin: config.env === 'production'
-        ? config.frontendUrl
-        : true, // Allow all origins in development
+    origin: config.env === 'production' ? config.frontendUrl : true,
     credentials: true
 }));
+
+// Rate Limiting
+app.use('/api/', apiRateLimiter);
+app.use('/api/auth/', authRateLimiter);
+
+// Parsing
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/health', healthRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/admin', adminInviteRoutes);
-
-// Protected Routes
-app.post('/api/candidates/:id/invite', authenticate, inviteCandidate);
-app.get('/api/seed', authenticate, superAdminMiddleware, seedDatabase);
-
-// Generic Resource Routes
-app.use('/api', apiRouter);
-
-// Error Handling Middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    logger.error(err.stack);
-    const statusCode = err.statusCode || 500;
-    res.status(statusCode).json({
-        error: config.env === 'production' ? 'Internal server error' : err.message
-    });
+// Health check
+app.get('/health', (req, res) => {
+    res.json({ status: 'OK', timestamp: new Date() });
 });
 
+// Centralized API Routes
+app.use('/api', apiRouter);
+
+// Global Error Handling
+app.use(errorHandler);
+
 export default app;
+

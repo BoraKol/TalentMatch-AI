@@ -120,6 +120,10 @@ export class AppRoutes {
                     loadComponent: () => import('./components/admin/referral-hub.component').then(m => m.ReferralHubComponent)
                 },
                 {
+                    path: 'approvals',
+                    loadComponent: () => import('./components/admin/admin-approvals.component').then(m => m.AdminApprovalsComponent)
+                },
+                {
                     path: 'institutions',
                     children: [
                         { path: '', redirectTo: 'list', pathMatch: 'full' },

@@ -16,10 +16,12 @@ import employerRoutes from './employer.routes';
 import jobDiscoveryRoutes from './job-discovery.routes';
 import savedJobRoutes from './saved-job.routes';
 import referralRoutes from './referral.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);
 router.use('/candidates', candidateRoutes);
 router.use('/jobs', jobRoutes);
 router.use('/users', userRoutes);

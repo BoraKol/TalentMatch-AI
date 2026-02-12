@@ -3,6 +3,11 @@ export interface CandidateMatch {
     candidateName: string;
     email: string;
     matchPercentage: number;
+    scoreBreakdown?: {
+        primary: number;
+        secondary: number;
+        soft: number;
+    };
     analysis: string;
     strengths: string[];
     skills: string[];
@@ -17,6 +22,11 @@ export interface JobMatch {
     title: string;
     company: string;
     matchScore: number;
+    scoreBreakdown?: {
+        primary: number;
+        secondary: number;
+        soft: number;
+    };
     aiAnalysis?: string;
     description?: string;
     location?: string;

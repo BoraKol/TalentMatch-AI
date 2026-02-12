@@ -90,40 +90,60 @@ import { environment } from '../../environments/environment';
                         placeholder="Describe the role, responsibilities, and what makes this opportunity exciting..."></textarea>
             </div>
 
-            <!-- Skills -->
-            <div class="mb-8">
+            <!-- Primary Skills -->
+            <div class="mb-8 p-6 rounded-2xl bg-emerald-50/50 border border-emerald-100">
               <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold">3</span>
-                Required Skills
+                <span class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm font-bold">3</span>
+                Primary Skills (10 Points)
               </h2>
-              <p class="text-sm text-slate-500 mb-4">Select the skills that are essential for this role</p>
+              <p class="text-sm text-slate-600 mb-4">Crucial technical skills. Matches here contribute 10 points to the score.</p>
               <div class="flex flex-wrap gap-2">
-                @for (skill of availableSkills; track skill) {
+                @for (skill of technicalSkills; track skill) {
                   <button type="button" 
-                          (click)="toggleSkill(skill, 'required')"
-                          [class]="isSkillSelected(skill, 'required') 
-                            ? 'px-4 py-2 rounded-full bg-emerald-500 text-white font-medium transition-all shadow-md' 
-                            : 'px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition-all'">
+                          (click)="toggleSkill(skill, 'primary')"
+                          [class]="isSkillSelected(skill, 'primary') 
+                            ? 'px-4 py-2 rounded-full bg-emerald-500 text-white font-medium transition-all shadow-md scale-105' 
+                            : 'px-4 py-2 rounded-full bg-white text-slate-600 border border-slate-200 hover:border-emerald-300 font-medium transition-all'">
                     {{ skill }}
                   </button>
                 }
               </div>
             </div>
 
-            <!-- Preferred Skills -->
-            <div class="mb-8">
+            <!-- Secondary Skills -->
+            <div class="mb-8 p-6 rounded-2xl bg-blue-50/50 border border-blue-100">
               <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">4</span>
-                Preferred Skills (Nice to Have)
+                <span class="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center text-sm font-bold">4</span>
+                Secondary Skills (5 Points)
               </h2>
-              <p class="text-sm text-slate-500 mb-4">Select bonus skills that would be great to have</p>
+              <p class="text-sm text-slate-600 mb-4">Important but not absolute requirements. Matches contribute 5 points.</p>
               <div class="flex flex-wrap gap-2">
-                @for (skill of availableSkills; track skill) {
+                @for (skill of technicalSkills; track skill) {
                   <button type="button" 
-                          (click)="toggleSkill(skill, 'preferred')"
-                          [class]="isSkillSelected(skill, 'preferred') 
-                            ? 'px-4 py-2 rounded-full bg-blue-500 text-white font-medium transition-all shadow-md' 
-                            : 'px-4 py-2 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium transition-all'">
+                          (click)="toggleSkill(skill, 'secondary')"
+                          [class]="isSkillSelected(skill, 'secondary') 
+                            ? 'px-4 py-2 rounded-full bg-blue-500 text-white font-medium transition-all shadow-md scale-105' 
+                            : 'px-4 py-2 rounded-full bg-white text-slate-600 border border-slate-200 hover:border-blue-300 font-medium transition-all'">
+                    {{ skill }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Soft Skills -->
+            <div class="mb-8 p-6 rounded-2xl bg-purple-50/50 border border-purple-100">
+              <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-purple-500 text-white flex items-center justify-center text-sm font-bold">5</span>
+                Soft Skills (2 Points)
+              </h2>
+              <p class="text-sm text-slate-600 mb-4">Interpersonal skills that round out a candidate.</p>
+              <div class="flex flex-wrap gap-2">
+                @for (skill of softSkillsList; track skill) {
+                  <button type="button" 
+                          (click)="toggleSkill(skill, 'soft')"
+                          [class]="isSkillSelected(skill, 'soft') 
+                            ? 'px-4 py-2 rounded-full bg-purple-500 text-white font-medium transition-all shadow-md scale-105' 
+                            : 'px-4 py-2 rounded-full bg-white text-slate-600 border border-slate-200 hover:border-purple-300 font-medium transition-all'">
                     {{ skill }}
                   </button>
                 }
@@ -141,17 +161,17 @@ import { environment } from '../../environments/environment';
             <div class="flex flex-col sm:flex-row gap-4">
               <button type="submit" 
                       [disabled]="isLoading() || !jobForm.valid"
-                      class="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                      class="flex-1 py-4 px-6 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 text-white font-bold text-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed">
                 @if (isLoading()) {
                   <span class="inline-flex items-center gap-2">
                     <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
-                    Posting...
+                    Posting Job...
                   </span>
                 } @else {
-                  Post Job & Find Candidates with AI
+                  Post Job & Find Candidates with Weighted AI
                 }
               </button>
               <button type="button" routerLink="/employer/dashboard"
@@ -173,11 +193,16 @@ export class JobPostComponent {
 
   isLoading = signal(false);
   errorMessage = signal('');
-  requiredSkills = signal<string[]>([]);
-  preferredSkills = signal<string[]>([]);
+
+  primarySkills = signal<string[]>([]);
+  secondarySkills = signal<string[]>([]);
+  softSkills = signal<string[]>([]);
 
   // Dynamic dashboard link based on user role
   dashboardLink = signal('/employer/dashboard');
+
+  technicalSkills: string[] = [];
+  softSkillsList: string[] = [];
 
   private getCompanyName(): string {
     const user = this.authService.currentUser();
@@ -224,6 +249,14 @@ export class JobPostComponent {
   ];
 
   constructor() {
+    // Separate technical and soft skills for the template
+    this.technicalSkills = this.availableSkills.filter(s =>
+      !['Communication', 'Problem Solving', 'Team Collaboration', 'Time Management', 'Adaptability', 'Critical Thinking', 'Leadership', 'Mentoring'].includes(s)
+    );
+    this.softSkillsList = this.availableSkills.filter(s =>
+      ['Communication', 'Problem Solving', 'Team Collaboration', 'Time Management', 'Adaptability', 'Critical Thinking', 'Leadership', 'Mentoring'].includes(s)
+    );
+
     // Set dashboard link based on user role
     const role = this.authService.currentUser()?.role;
     if (role === 'institution_admin' || role === 'institution_user') {
@@ -253,33 +286,35 @@ export class JobPostComponent {
 
 
 
-  toggleSkill(skill: string, type: 'required' | 'preferred') {
-    if (type === 'required') {
-      const current = this.requiredSkills();
-      if (current.includes(skill)) {
-        this.requiredSkills.set(current.filter(s => s !== skill));
-      } else {
-        this.requiredSkills.set([...current, skill]);
-        // Remove from preferred if added to required
-        this.preferredSkills.set(this.preferredSkills().filter(s => s !== skill));
-      }
+  toggleSkill(skill: string, type: 'primary' | 'secondary' | 'soft') {
+    const categories = {
+      primary: this.primarySkills,
+      secondary: this.secondarySkills,
+      soft: this.softSkills
+    };
+
+    const target = categories[type];
+    const current = target();
+
+    if (current.includes(skill)) {
+      target.set(current.filter(s => s !== skill));
     } else {
-      const current = this.preferredSkills();
-      if (current.includes(skill)) {
-        this.preferredSkills.set(current.filter(s => s !== skill));
-      } else {
-        this.preferredSkills.set([...current, skill]);
-        // Remove from required if added to preferred
-        this.requiredSkills.set(this.requiredSkills().filter(s => s !== skill));
-      }
+      // Remove from other categories first to ensure exclusivity
+      [this.primarySkills, this.secondarySkills, this.softSkills].forEach(cat => {
+        cat.set(cat().filter(s => s !== skill));
+      });
+
+      target.set([...current, skill]);
     }
   }
 
-  isSkillSelected(skill: string, type: 'required' | 'preferred'): boolean {
-    if (type === 'required') {
-      return this.requiredSkills().includes(skill);
-    }
-    return this.preferredSkills().includes(skill);
+  isSkillSelected(skill: string, type: 'primary' | 'secondary' | 'soft'): boolean {
+    const categories = {
+      primary: this.primarySkills,
+      secondary: this.secondarySkills,
+      soft: this.softSkills
+    };
+    return categories[type]().includes(skill);
   }
 
   onSubmit() {
@@ -289,14 +324,15 @@ export class JobPostComponent {
 
       const jobData = {
         ...this.jobForm.getRawValue(),
-        requiredSkills: this.requiredSkills(),
-        preferredSkills: this.preferredSkills(),
-        requirements: this.requiredSkills() // for backwards compatibility
+        primarySkills: this.primarySkills(),
+        secondarySkills: this.secondarySkills(),
+        softSkills: this.softSkills(),
+        requiredSkills: this.primarySkills(), // backwards compatibility
+        requirements: this.primarySkills() // backwards compatibility
       };
 
       this.http.post<any>(`${environment.apiUrl}/jobs`, jobData).subscribe({
         next: (response) => {
-          // Navigate to AI match results with the new job ID
           this.router.navigate(['/employer/jobs', response._id, 'matches']);
         },
         error: (err) => {

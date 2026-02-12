@@ -4,7 +4,10 @@ export interface IJob extends Document {
     title: string;
     description: string;
     requirements: string[];
-    requiredSkills: string[];
+    requiredSkills: string[]; // Legacy
+    primarySkills: string[];
+    secondarySkills: string[];
+    softSkills: string[];
     preferredSkills: string[];
     employmentType: string;
     experienceRequired: number;
@@ -22,6 +25,9 @@ const JobSchema: Schema = new Schema({
     description: { type: String, required: true },
     requirements: [{ type: String }],
     requiredSkills: [{ type: String }],
+    primarySkills: [{ type: String }],
+    secondarySkills: [{ type: String }],
+    softSkills: [{ type: String }],
     preferredSkills: [{ type: String }],
     employmentType: { type: String, default: 'Full-time' },
     experienceRequired: { type: Number, default: 0 },

@@ -18,6 +18,13 @@ interface CandidateMatch {
   school?: string;
   department?: string;
   bio?: string;
+  scoreBreakdown?: {
+    primary: number;
+    secondary: number;
+    soft: number;
+    total: number;
+    maxPossible: number;
+  };
 }
 
 interface MatchResult {
@@ -157,6 +164,27 @@ interface MatchResult {
                           }
                         </div>
                       </div>
+
+                      <!-- Score Breakdown -->
+                      @if (candidate.scoreBreakdown) {
+                        <div class="mb-4 grid grid-cols-3 gap-3">
+                          <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-center">
+                            <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider mb-1">Primary</p>
+                            <p class="text-lg font-bold text-white">{{ candidate.scoreBreakdown.primary }}</p>
+                            <p class="text-[10px] text-slate-500">10 pts/match</p>
+                          </div>
+                          <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-center">
+                            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1">Secondary</p>
+                            <p class="text-lg font-bold text-white">{{ candidate.scoreBreakdown.secondary }}</p>
+                            <p class="text-[10px] text-slate-500">5 pts/match</p>
+                          </div>
+                          <div class="bg-purple-500/10 border border-purple-500/20 rounded-xl p-3 text-center">
+                            <p class="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-1">Soft Skills</p>
+                            <p class="text-lg font-bold text-white">{{ candidate.scoreBreakdown.soft }}</p>
+                            <p class="text-[10px] text-slate-500">2 pts/match</p>
+                          </div>
+                        </div>
+                      }
 
                       <!-- AI Analysis (Expandable) -->
                       <div class="bg-slate-900/50 rounded-xl overflow-hidden mb-4">

@@ -152,7 +152,11 @@ export class LoginComponent {
         },
         error: (err) => {
           this.isLoading.set(false);
-          this.errorMessage.set(err.error?.error || 'Login failed. Please check your credentials.');
+          if (err.status === 403) {
+            this.errorMessage.set('Your account is pending Super Admin approval. Please check back later.');
+          } else {
+            this.errorMessage.set(err.error?.error || 'Login failed. Please check your credentials.');
+          }
         }
       });
     }

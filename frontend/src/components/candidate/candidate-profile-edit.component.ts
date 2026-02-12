@@ -7,11 +7,13 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 import { environment } from '../../environments/environment';
+import { SkillSelectorComponent } from '../shared/skill-selector.component';
+import { DEFAULT_SKILLS, Skill } from '../../config/skills.config';
 
 @Component({
     selector: 'app-candidate-profile-edit',
     standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
+    imports: [CommonModule, ReactiveFormsModule, RouterModule, SkillSelectorComponent],
     template: `
     <div class="min-h-screen bg-slate-50 py-12">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -95,25 +97,55 @@ import { environment } from '../../environments/environment';
                     </div>
                 </div>
                  
-                 <!-- Skills -->
-                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-3">Skills</label>
-                    <div class="flex flex-wrap gap-2 mb-4 min-h-[40px]">
-                        <div *ngFor="let skill of skills.controls; let i=index" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100 shadow-sm transition-all hover:bg-blue-100">
-                            {{ skill.value }}
-                            <button type="button" (click)="removeSkill(i)" class="ml-2 text-blue-400 hover:text-blue-600 focus:outline-none">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+                 <!-- Skills Categorization -->
+                 <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-emerald-700 mb-3 flex items-center gap-2">
+                           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                           Primary Skills (Your Strengths)
+                        </label>
+                        <div class="flex flex-wrap gap-2 mb-3 min-h-[40px]">
+                            <div *ngFor="let skill of primarySkills.controls; let i=index" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm transition-all hover:bg-emerald-100">
+                                {{ skill.value }}
+                                <button type="button" (click)="removeSkill(i, 'primary')" class="ml-2 text-emerald-400 hover:text-emerald-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
                         </div>
-                        <div *ngIf="skills.length === 0" class="text-slate-400 text-sm italic py-1.5 px-3">
-                            No skills added yet. Click 'Add Skills' to select from the list.
-                        </div>
+                        <button type="button" (click)="openSkillModal('primary')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 underline px-1">Add Primary Skills</button>
                     </div>
-                    
-                    <button type="button" (click)="openSkillModal()" class="inline-flex items-center px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors focus:ring-4 focus:ring-slate-100">
-                        <svg class="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                        Add Skills
-                    </button>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                           <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                           Secondary Skills (Working Knowledge)
+                        </label>
+                        <div class="flex flex-wrap gap-2 mb-3 min-h-[40px]">
+                            <div *ngFor="let skill of secondarySkills.controls; let i=index" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100 shadow-sm transition-all hover:bg-blue-100">
+                                {{ skill.value }}
+                                <button type="button" (click)="removeSkill(i, 'secondary')" class="ml-2 text-blue-400 hover:text-blue-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" (click)="openSkillModal('secondary')" class="text-xs font-semibold text-blue-600 hover:text-blue-700 underline px-1">Add Secondary Skills</button>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                           <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                           Soft Skills
+                        </label>
+                        <div class="flex flex-wrap gap-2 mb-3 min-h-[40px]">
+                            <div *ngFor="let skill of softSkills.controls; let i=index" class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 border border-purple-100 shadow-sm transition-all hover:bg-purple-100">
+                                {{ skill.value }}
+                                <button type="button" (click)="removeSkill(i, 'soft')" class="ml-2 text-purple-400 hover:text-purple-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" (click)="openSkillModal('soft')" class="text-xs font-semibold text-purple-600 hover:text-purple-700 underline px-1">Add Soft Skills</button>
+                    </div>
                  </div>
             </div>
 
@@ -153,50 +185,15 @@ import { environment } from '../../environments/environment';
         </div>
       </div>
 
-      <!-- Skills Modal -->
-      <div *ngIf="showSkillModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" (click)="closeSkillModal()">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" (click)="$event.stopPropagation()">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <h3 class="text-lg font-bold text-slate-800">Select Skills</h3>
-                <button (click)="closeSkillModal()" class="text-slate-400 hover:text-slate-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                <div class="mb-4 relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    </div>
-                    <input #searchInput type="text" placeholder="Search skills..." (input)="filterSkills(searchInput.value)" class="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 px-4 pl-10 transition-all">
-                </div>
-
-                <div class="grid grid-cols-2 gap-2">
-                    <button *ngFor="let skill of filteredAvailableSkills" 
-                            (click)="toggleSkill(skill.name)"
-                            [class.bg-blue-50]="hasSkill(skill.name)"
-                            [class.border-blue-200]="hasSkill(skill.name)"
-                            [class.text-blue-700]="hasSkill(skill.name)"
-                            class="text-left px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-between group">
-                        <span class="font-medium truncate">{{ skill.name }}</span>
-                        <span *ngIf="hasSkill(skill.name)" class="text-blue-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        </span>
-                    </button>
-                </div>
-                
-                <div *ngIf="filteredAvailableSkills.length === 0" class="text-center py-8 text-slate-500">
-                    No skills found fitting your search.
-                </div>
-            </div>
-            
-            <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-                 <button (click)="closeSkillModal()" class="px-6 py-2 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 transition-colors">
-                    Done
-                </button>
-            </div>
-        </div>
-      </div>
+      <!-- Skill Selector Modal -->
+      <app-skill-selector 
+        *ngIf="showSkillModal"
+        [categoryTitle]="getModalTitle()"
+        [selectedSkills]="getCurrentlySelectedSkills()"
+        [skillType]="getModalSkillType()"
+        (skillToggled)="toggleSkill($event)"
+        (close)="closeSkillModal()">
+      </app-skill-selector>
     </div>
   `
 })
@@ -211,138 +208,9 @@ export class CandidateProfileEditComponent implements OnInit {
     isLoading = signal(false);
     candidateId: string | null = null;
 
-    // Skill Modal
+    // Skill Modal State
     showSkillModal = false;
-
-    // Default fallback skills from registration
-    defaultSkills = [
-        // === TECHNICAL SKILLS ===
-        // Software Development - Frontend
-        { name: 'HTML', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'CSS', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'JavaScript', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'TypeScript', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'React', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'Angular', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'Vue.js', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'Next.js', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'Tailwind CSS', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-        { name: 'Sass/SCSS', category: 'Software Development', subcategory: 'Frontend', skillType: 'technical' },
-
-        // Software Development - Backend
-        { name: 'Node.js', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'Python', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'Java', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'C#', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'Go (Golang)', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'Rust', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'PHP', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-        { name: 'Ruby', category: 'Software Development', subcategory: 'Backend', skillType: 'technical' },
-
-        // Software Development - Frameworks
-        { name: 'Express.js', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'NestJS', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'Django', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'Flask', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'Spring Boot', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'ASP.NET Core', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-        { name: 'Laravel', category: 'Software Development', subcategory: 'Frameworks', skillType: 'technical' },
-
-        // Mobile Development
-        { name: 'React Native', category: 'Mobile Development', subcategory: 'Cross-Platform', skillType: 'technical' },
-        { name: 'Flutter', category: 'Mobile Development', subcategory: 'Cross-Platform', skillType: 'technical' },
-        { name: 'Swift', category: 'Mobile Development', subcategory: 'iOS', skillType: 'technical' },
-        { name: 'SwiftUI', category: 'Mobile Development', subcategory: 'iOS', skillType: 'technical' },
-        { name: 'Kotlin', category: 'Mobile Development', subcategory: 'Android', skillType: 'technical' },
-        { name: 'Dart', category: 'Mobile Development', subcategory: 'Cross-Platform', skillType: 'technical' },
-
-        // Data & AI
-        { name: 'Pandas', category: 'Data & AI', subcategory: 'Data Science', skillType: 'technical' },
-        { name: 'NumPy', category: 'Data & AI', subcategory: 'Data Science', skillType: 'technical' },
-        { name: 'Jupyter', category: 'Data & AI', subcategory: 'Data Science', skillType: 'technical' },
-        { name: 'R', category: 'Data & AI', subcategory: 'Data Science', skillType: 'technical' },
-        { name: 'TensorFlow', category: 'Data & AI', subcategory: 'AI/ML', skillType: 'technical' },
-        { name: 'PyTorch', category: 'Data & AI', subcategory: 'AI/ML', skillType: 'technical' },
-        { name: 'Scikit-learn', category: 'Data & AI', subcategory: 'AI/ML', skillType: 'technical' },
-        { name: 'OpenAI API', category: 'Data & AI', subcategory: 'AI/ML', skillType: 'technical' },
-        { name: 'LangChain', category: 'Data & AI', subcategory: 'AI/ML', skillType: 'technical' },
-        { name: 'Apache Spark', category: 'Data & AI', subcategory: 'Data Engineering', skillType: 'technical' },
-        { name: 'Airflow', category: 'Data & AI', subcategory: 'Data Engineering', skillType: 'technical' },
-        { name: 'dbt', category: 'Data & AI', subcategory: 'Data Engineering', skillType: 'technical' },
-
-        // Cloud & DevOps
-        { name: 'AWS', category: 'Cloud & DevOps', subcategory: 'Cloud Platforms', skillType: 'technical' },
-        { name: 'Azure', category: 'Cloud & DevOps', subcategory: 'Cloud Platforms', skillType: 'technical' },
-        { name: 'Google Cloud (GCP)', category: 'Cloud & DevOps', subcategory: 'Cloud Platforms', skillType: 'technical' },
-        { name: 'Docker', category: 'Cloud & DevOps', subcategory: 'Containers', skillType: 'technical' },
-        { name: 'Kubernetes', category: 'Cloud & DevOps', subcategory: 'Containers', skillType: 'technical' },
-        { name: 'Helm', category: 'Cloud & DevOps', subcategory: 'Containers', skillType: 'technical' },
-        { name: 'Jenkins', category: 'Cloud & DevOps', subcategory: 'CI/CD', skillType: 'technical' },
-        { name: 'GitHub Actions', category: 'Cloud & DevOps', subcategory: 'CI/CD', skillType: 'technical' },
-        { name: 'GitLab CI', category: 'Cloud & DevOps', subcategory: 'CI/CD', skillType: 'technical' },
-        { name: 'Terraform', category: 'Cloud & DevOps', subcategory: 'IaC', skillType: 'technical' },
-        { name: 'Ansible', category: 'Cloud & DevOps', subcategory: 'IaC', skillType: 'technical' },
-        { name: 'Git', category: 'Cloud & DevOps', subcategory: 'Version Control', skillType: 'technical' },
-
-        // Databases
-        { name: 'PostgreSQL', category: 'Databases', subcategory: 'Relational', skillType: 'technical' },
-        { name: 'MySQL', category: 'Databases', subcategory: 'Relational', skillType: 'technical' },
-        { name: 'SQL Server', category: 'Databases', subcategory: 'Relational', skillType: 'technical' },
-        { name: 'Oracle', category: 'Databases', subcategory: 'Relational', skillType: 'technical' },
-        { name: 'MongoDB', category: 'Databases', subcategory: 'NoSQL', skillType: 'technical' },
-        { name: 'Redis', category: 'Databases', subcategory: 'NoSQL', skillType: 'technical' },
-        { name: 'Elasticsearch', category: 'Databases', subcategory: 'NoSQL', skillType: 'technical' },
-        { name: 'DynamoDB', category: 'Databases', subcategory: 'NoSQL', skillType: 'technical' },
-        { name: 'Firebase', category: 'Databases', subcategory: 'NoSQL', skillType: 'technical' },
-
-        // Networking & Security
-        { name: 'TCP/IP', category: 'Networking & Security', subcategory: 'Networking', skillType: 'technical' },
-        { name: 'DNS', category: 'Networking & Security', subcategory: 'Networking', skillType: 'technical' },
-        { name: 'Load Balancing', category: 'Networking & Security', subcategory: 'Networking', skillType: 'technical' },
-        { name: 'CDN', category: 'Networking & Security', subcategory: 'Networking', skillType: 'technical' },
-        { name: 'VPN', category: 'Networking & Security', subcategory: 'Networking', skillType: 'technical' },
-        { name: 'Penetration Testing', category: 'Networking & Security', subcategory: 'Cybersecurity', skillType: 'technical' },
-        { name: 'OWASP', category: 'Networking & Security', subcategory: 'Cybersecurity', skillType: 'technical' },
-        { name: 'SIEM', category: 'Networking & Security', subcategory: 'Cybersecurity', skillType: 'technical' },
-        { name: 'IAM', category: 'Networking & Security', subcategory: 'Cybersecurity', skillType: 'technical' },
-        { name: 'Firewall', category: 'Networking & Security', subcategory: 'Cybersecurity', skillType: 'technical' },
-
-        // Design & UX
-        { name: 'Figma', category: 'Design & UX', subcategory: 'Design Tools', skillType: 'technical' },
-        { name: 'Adobe XD', category: 'Design & UX', subcategory: 'Design Tools', skillType: 'technical' },
-        { name: 'Sketch', category: 'Design & UX', subcategory: 'Design Tools', skillType: 'technical' },
-        { name: 'User Research', category: 'Design & UX', subcategory: 'UX', skillType: 'technical' },
-        { name: 'Prototyping', category: 'Design & UX', subcategory: 'UX', skillType: 'technical' },
-
-        // === SOFT SKILLS ===
-        { name: 'Communication', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Problem Solving', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Team Collaboration', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Time Management', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Adaptability', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Critical Thinking', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Leadership', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Conflict Resolution', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Mentoring', category: 'Soft Skills', skillType: 'soft' },
-        { name: 'Presentation Skills', category: 'Soft Skills', skillType: 'soft' },
-
-        // === NICE TO HAVE ===
-        { name: 'Agile/Scrum', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'JIRA', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Confluence', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Technical Writing', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Open Source Contribution', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Public Speaking', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Startup Experience', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'Remote Work Experience', category: 'Nice to Have', skillType: 'nice_to_have' },
-        { name: 'AWS Certification', category: 'Nice to Have', subcategory: 'Certifications', skillType: 'nice_to_have' },
-        { name: 'Azure Certification', category: 'Nice to Have', subcategory: 'Certifications', skillType: 'nice_to_have' },
-        { name: 'CISSP', category: 'Nice to Have', subcategory: 'Certifications', skillType: 'nice_to_have' },
-        { name: 'PMP', category: 'Nice to Have', subcategory: 'Certifications', skillType: 'nice_to_have' }
-    ];
-
-    availableSkills: any[] = [];
-    filteredAvailableSkills: any[] = [];
+    currentModalCategory: 'primary' | 'secondary' | 'soft' = 'primary';
 
     constructor() {
         this.profileForm = this.fb.group({
@@ -352,120 +220,108 @@ export class CandidateProfileEditComponent implements OnInit {
             bio: [''],
             experience: [0, [Validators.min(0)]],
             currentTitle: ['Open to Work'],
-            skills: this.fb.array([]),
+            skills: this.fb.array([]), // Legacy maintenance
+            primarySkills: this.fb.array([]),
+            secondarySkills: this.fb.array([]),
+            softSkills: this.fb.array([]),
             school: [''],
             department: ['']
         });
     }
 
-    get skills() {
-        return this.profileForm.get('skills') as FormArray;
-    }
+    get skills() { return this.profileForm.get('skills') as FormArray; }
+    get primarySkills() { return this.profileForm.get('primarySkills') as FormArray; }
+    get secondarySkills() { return this.profileForm.get('secondarySkills') as FormArray; }
+    get softSkills() { return this.profileForm.get('softSkills') as FormArray; }
 
     ngOnInit() {
         this.loadProfile();
-        this.fetchAvailableSkills();
-    }
-
-    async fetchAvailableSkills() {
-        try {
-            const skills = await this.http.get<any[]>(`${environment.apiUrl}/skills`).toPromise();
-
-            // Merge fetched skills with default skills, avoiding duplicates based on name
-            const mergedSkills = [...this.defaultSkills];
-
-            if (skills && Array.isArray(skills)) {
-                skills.forEach(backendSkill => {
-                    if (!mergedSkills.some(s => s.name.toLowerCase() === backendSkill.name.toLowerCase())) {
-                        mergedSkills.push(backendSkill);
-                    }
-                });
-            }
-
-            this.availableSkills = mergedSkills;
-            this.filteredAvailableSkills = mergedSkills;
-
-        } catch (error) {
-            console.error('Failed to load skills from backend, using defaults', error);
-            // Fallback to defaults
-            this.availableSkills = this.defaultSkills;
-            this.filteredAvailableSkills = this.defaultSkills;
-        }
     }
 
     async loadProfile() {
         this.isLoading.set(true);
-        const userId = this.authService.currentUser()?.id;
-        if (!userId) return;
+        const user = this.authService.currentUser();
+        if (!user || !user.id) {
+            this.toastService.show('User session not found', 'error');
+            return;
+        }
 
         try {
-            const candidateProfile = await this.http.get<any>(`${environment.apiUrl}/candidates/user/${userId}`).toPromise();
+            const profile = await this.http.get<any>(`${environment.apiUrl}/candidates/user/${user.id}`).toPromise();
 
-            if (candidateProfile) {
-                this.candidateId = candidateProfile._id;
+            if (profile) {
+                this.candidateId = profile._id;
                 this.profileForm.patchValue({
-                    firstName: candidateProfile.firstName,
-                    lastName: candidateProfile.lastName,
-                    email: candidateProfile.email,
-                    bio: candidateProfile.bio,
-                    experience: candidateProfile.experience,
-                    currentTitle: candidateProfile.currentTitle || 'Open to Work',
-                    school: candidateProfile.school,
-                    department: candidateProfile.department
+                    firstName: profile.firstName,
+                    lastName: profile.lastName,
+                    email: profile.email,
+                    bio: profile.bio || '',
+                    experience: profile.experience || 0,
+                    currentTitle: profile.currentTitle || 'Open to Work',
+                    school: profile.school || '',
+                    department: profile.department || ''
                 });
 
-                // Populate skills
-                const currentSkills = candidateProfile.skills || [];
-                currentSkills.forEach((skill: string) => {
-                    this.skills.push(this.fb.control(skill));
-                });
+                // Populate skills arrays
+                this.populateSkills(profile.primarySkills, this.primarySkills);
+                this.populateSkills(profile.secondarySkills, this.secondarySkills);
+                this.populateSkills(profile.softSkills, this.softSkills);
             }
         } catch (error) {
             console.error('Error loading profile', error);
-            this.toastService.show('Could not load profile data', 'error');
+            this.toastService.show('Failed to load profile', 'error');
         } finally {
             this.isLoading.set(false);
         }
     }
 
+    private populateSkills(skills: string[], array: FormArray) {
+        array.clear();
+        (skills || []).forEach(s => array.push(this.fb.control(s)));
+    }
+
     // Modal Logic
-    openSkillModal() {
+    openSkillModal(category: 'primary' | 'secondary' | 'soft') {
+        this.currentModalCategory = category;
         this.showSkillModal = true;
-        // Reset filter when opening
-        this.filteredAvailableSkills = this.availableSkills;
     }
 
     closeSkillModal() {
         this.showSkillModal = false;
     }
 
-    filterSkills(query: string) {
-        if (!query) {
-            this.filteredAvailableSkills = this.availableSkills;
-            return;
+    getModalTitle(): string {
+        switch (this.currentModalCategory) {
+            case 'primary': return 'Primary Skills';
+            case 'secondary': return 'Secondary Skills';
+            case 'soft': return 'Soft Skills';
+            default: return 'Skills';
         }
-        this.filteredAvailableSkills = this.availableSkills.filter(s =>
-            s.name.toLowerCase().includes(query.toLowerCase())
-        );
     }
 
-    hasSkill(skillName: string): boolean {
-        return this.skills.controls.some(control => control.value === skillName);
+    getModalSkillType(): 'technical' | 'soft' | 'all' {
+        return this.currentModalCategory === 'soft' ? 'soft' : 'technical';
+    }
+
+    getCurrentlySelectedSkills(): string[] {
+        const array = (this as any)[this.currentModalCategory + 'Skills'] as FormArray;
+        return array.controls.map(c => c.value);
     }
 
     toggleSkill(skillName: string) {
-        if (this.hasSkill(skillName)) {
-            // Remove
-            const index = this.skills.controls.findIndex(c => c.value === skillName);
-            if (index !== -1) this.removeSkill(index);
+        const array = (this as any)[this.currentModalCategory + 'Skills'] as FormArray;
+        const index = array.controls.findIndex(c => c.value === skillName);
+
+        if (index >= 0) {
+            array.removeAt(index);
         } else {
-            // Add
-            this.skills.push(this.fb.control(skillName));
+            array.push(this.fb.control(skillName));
         }
     }
 
-    removeSkill(index: number) {
-        this.skills.removeAt(index);
+    removeSkill(index: number, category: 'primary' | 'secondary' | 'soft') {
+        const array = (this as any)[category + 'Skills'] as FormArray;
+        array.removeAt(index);
     }
 
     onSubmit() {
@@ -474,19 +330,24 @@ export class CandidateProfileEditComponent implements OnInit {
         this.isLoading.set(true);
         const formData = this.profileForm.getRawValue();
 
-        this.http.put(`${environment.apiUrl}/candidates/${this.candidateId}`, formData).subscribe({
-            next: () => {
-                this.toastService.show('Profile updated successfully!', 'success');
-                setTimeout(() => {
+        // Sync generic 'skills' for matching logic compatibility
+        formData.skills = [
+            ...formData.primarySkills,
+            ...formData.secondarySkills,
+            ...formData.softSkills
+        ];
+
+        this.http.put(`${environment.apiUrl}/candidates/${this.candidateId}`, formData)
+            .subscribe({
+                next: () => {
+                    this.toastService.show('Profile updated successfully', 'success');
                     this.router.navigate(['/candidate/dashboard']);
-                }, 1000);
-            },
-            error: (err) => {
-                console.error('Update failed', err);
-                this.toastService.show('Failed to update profile.', 'error');
-                this.isLoading.set(false);
-            },
-            complete: () => this.isLoading.set(false)
-        });
+                },
+                error: (err) => {
+                    console.error('Update failed', err);
+                    this.toastService.show('Failed to update profile', 'error');
+                },
+                complete: () => this.isLoading.set(false)
+            });
     }
 }
