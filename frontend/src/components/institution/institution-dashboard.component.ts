@@ -17,11 +17,7 @@ import { environment } from '../../environments/environment';
           <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
               <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                  </svg>
-                </div>
+                <img src="assets/favicon.jpg" alt="TalentMatch Logo" class="w-8 h-8 rounded-lg object-cover shadow-sm">
                 <span class="text-xl font-bold text-slate-800">TalentMatch AI</span>
                 <span class="ml-2 px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Institution</span>
               </div>

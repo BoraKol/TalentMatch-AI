@@ -19,7 +19,8 @@
             "browser": "index.tsx",
             "tsConfig": "tsconfig.json",
             "assets": [
-              "src/favicon.svg"
+              "src/assets",
+              "src/favicon.jpg"
             ],
             "styles": [
               "src/styles.css"

@@ -36,9 +36,7 @@ interface Job {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold">
-                TM
-              </div>
+              <img src="assets/favicon.jpg" alt="TalentMatch Logo" class="w-10 h-10 rounded-xl object-cover shadow-sm">
               <span class="font-bold text-xl text-slate-800">TalentMatch AI</span>
               <span class="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded">Employer</span>
             </div>

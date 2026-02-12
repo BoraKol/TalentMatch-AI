@@ -3,19 +3,14 @@ import { CommonModule } from '@angular/common';
 import { DataService, Job, Candidate } from '../services/data.service';
 import { GeminiService } from '../services/gemini.service';
 import { ToastService } from '../services/toast.service';
-
-interface AIMatchResult {
-  candidateId: number;
-  matchPercentage: number;
-  analysis: string;
-  strengths: string[];
-  candidateDetails?: Candidate;
-}
+import { JobListComponent } from './job-match/job-list.component';
+import { MatchResultCardComponent, AIMatchResult } from './job-match/match-result-card.component';
+import { CandidateProfileModalComponent } from './job-match/candidate-profile-modal.component';
 
 @Component({
   selector: 'app-job-match',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, JobListComponent, MatchResultCardComponent, CandidateProfileModalComponent],
   template: `
     <div class="h-full flex flex-col">
       <!-- Header -->
@@ -24,41 +19,15 @@ interface AIMatchResult {
         <p class="text-slate-500 mt-1">Select a job to run the AI matching algorithm against the candidate pool.</p>
       </div>
 
-      <div class="flex-1 overflow-hidden flex flex-col lg:flex-row gap-6 p-8 pt-0">
+      <div class="flex-1 flex flex-col lg:flex-row gap-6 p-8 pt-0 lg:overflow-hidden overflow-y-auto">
         
         <!-- Job List -->
-        <div class="w-full lg:w-1/3 flex flex-col gap-4 overflow-y-auto pr-2">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Active Job Postings</div>
-          @for (job of jobs; track job.id) {
-            <div 
-              (click)="selectJob(job)"
-              class="group relative p-5 rounded-xl border transition-all cursor-pointer hover:shadow-md"
-              [class]="selectedJob()?.id === job.id 
-                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-900/20' 
-                : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'">
-              
-              <div class="flex justify-between items-start mb-2">
-                <h3 class="font-bold text-lg" [class.text-white]="selectedJob()?.id === job.id">{{ job.title }}</h3>
-                <span class="text-xs px-2 py-1 rounded-full font-medium"
-                  [class]="selectedJob()?.id === job.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'">
-                  {{ job.type }}
-                </span>
-              </div>
-              
-              <p class="text-sm mb-4 line-clamp-2" [class]="selectedJob()?.id === job.id ? 'text-blue-100' : 'text-slate-500'">
-                {{ job.description }}
-              </p>
-
-              <div class="flex flex-wrap gap-2">
-                @for (skill of job.primarySkills; track skill) {
-                  <span class="text-xs px-2 py-0.5 rounded border"
-                    [class]="selectedJob()?.id === job.id ? 'border-white/30 text-white' : 'border-slate-200 text-slate-500 bg-slate-50'">
-                    {{ skill }}
-                  </span>
-                }
-              </div>
-            </div>
-          }
+        <div class="w-full lg:w-1/3">
+            <app-job-list 
+                [jobs]="jobs()" 
+                [selectedJob]="selectedJob()" 
+                (selectJob)="selectJob($event)">
+            </app-job-list>
         </div>
 
         <!-- AI Analysis Area -->
@@ -118,49 +87,11 @@ interface AIMatchResult {
                   </div>
 
                   @for (match of results(); track match.candidateId) {
-                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                      <div class="flex items-start gap-4">
-                        <img [src]="match.candidateDetails?.avatar || 'https://ui-avatars.com/api/?name=' + match.candidateDetails?.name" class="w-16 h-16 rounded-full object-cover border-2 border-slate-100">
-                        
-                        <div class="flex-1">
-                          <div class="flex justify-between items-start">
-                            <div>
-                              <h4 class="text-lg font-bold text-slate-800">{{ match.candidateDetails?.name }}</h4>
-                              <p class="text-sm text-slate-500 mb-2">
-                                <span *ngIf="match.candidateDetails?.role" class="font-medium text-slate-700">{{ match.candidateDetails?.role }}</span>
-                                <span *ngIf="match.candidateDetails?.role && match.candidateDetails?.experience" class="mx-1">•</span>
-                                <span *ngIf="match.candidateDetails?.experience">{{ match.candidateDetails?.experience }} Years Exp</span>
-                              </p>
-                            </div>
-                            <div class="flex flex-col items-end">
-                              <div class="text-2xl font-black" [ngClass]="getScoreClass(match.matchPercentage)">{{ match.matchPercentage }}%</div>
-                              <div class="text-xs font-bold text-slate-400 uppercase">Match Score</div>
-                            </div>
-                          </div>
-
-                          <div class="bg-blue-50 text-blue-800 text-sm p-3 rounded-lg border border-blue-100 mb-4">
-                            <span class="font-bold mr-1">AI Analysis:</span> {{ match.analysis || 'No detailed analysis provided by AI.' }}
-                          </div>
-
-                          <div class="flex flex-wrap gap-2 mb-4">
-                            @for (strength of match.strengths; track strength) {
-                              <span class="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded border border-slate-200 font-medium">
-                                + {{ strength }}
-                              </span>
-                            }
-                          </div>
-                          
-                          <div class="flex justify-end pt-2 border-t border-slate-100">
-                             <button (click)="viewProfile(match.candidateDetails!)" class="text-sm font-medium text-blue-600 hover:text-blue-800 px-4 py-2 hover:bg-blue-50 rounded transition-colors">
-                               View Full Profile
-                             </button>
-                             <button (click)="inviteToInterview(match.candidateDetails!)" class="text-sm font-medium bg-slate-900 text-white px-4 py-2 rounded ml-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10">
-                               Invite to Interview
-                             </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <app-match-result-card 
+                        [match]="match" 
+                        (viewProfile)="viewProfile($event)" 
+                        (invite)="inviteToInterview($event)">
+                    </app-match-result-card>
                   }
                 </div>
               }
@@ -171,61 +102,11 @@ interface AIMatchResult {
 
       <!-- Profile Modal -->
       @if (selectedCandidateForView()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" (click)="closeProfile()">
-          <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 sticky top-0">
-              <h3 class="font-bold text-xl text-slate-800">Candidate Profile</h3>
-              <button (click)="closeProfile()" class="text-slate-400 hover:text-slate-600">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div class="p-8">
-              <div class="flex items-start gap-6 mb-8">
-                <img [src]="selectedCandidateForView()?.avatar || 'https://ui-avatars.com/api/?name=' + selectedCandidateForView()?.name" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-lg">
-                <div>
-                  <h2 class="text-3xl font-bold text-slate-800">{{ selectedCandidateForView()?.name }}</h2>
-                  <p class="text-lg text-blue-600 font-medium mb-2">{{ selectedCandidateForView()?.role }}</p>
-                  <div class="flex items-center gap-2 text-slate-500 text-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    {{ selectedCandidateForView()?.experience }} Years Experience
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-6">
-                <div>
-                  <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">About</h4>
-                  <p class="text-slate-600 leading-relaxed">{{ selectedCandidateForView()?.bio }}</p>
-                </div>
-
-                <div>
-                  <h4 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Skills</h4>
-                  <div class="flex flex-wrap gap-2">
-                    @for (skill of selectedCandidateForView()?.skills; track skill) {
-                      <span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg font-medium border border-slate-200">
-                        {{ skill }}
-                      </span>
-                    }
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3">
-                 <button (click)="closeProfile()" class="px-5 py-2.5 text-slate-600 font-medium hover:bg-slate-50 rounded-lg transition-colors">
-                   Close
-                 </button>
-                 <button (click)="inviteToInterview(selectedCandidateForView()!)" class="px-5 py-2.5 bg-slate-900 text-white font-medium rounded-lg hover:bg-slate-800 shadow-lg shadow-slate-900/10 transition-colors">
-                   Invite to Interview
-                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-candidate-profile-modal 
+            [candidate]="selectedCandidateForView()" 
+            (close)="closeProfile()" 
+            (invite)="inviteToInterview($event)">
+        </app-candidate-profile-modal>
       }
     </div>
   `
@@ -285,13 +166,6 @@ export class JobMatchComponent {
 
   closeProfile() {
     this.selectedCandidateForView.set(null);
-  }
-
-  getScoreClass(score: number): string {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 75) return 'text-blue-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-500';
   }
 
   async inviteToInterview(candidate: Candidate) {
