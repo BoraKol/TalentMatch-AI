@@ -11,8 +11,19 @@ router.get('/', async (req, res) => {
         const includeInactive = req.query.includeInactive === 'true';
         const query = includeInactive ? {} : { isActive: true };
 
-        const skills = await Skill.find(query).sort({ createdAt: -1 });
+        const skills = await Skill.find(query).sort({ createdAt: 1 });
         res.json(skills);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET single skill
+router.get('/:id', async (req, res) => {
+    try {
+        const skill = await Skill.findById(req.params.id);
+        if (!skill) return res.status(404).json({ error: 'Skill not found' });
+        res.json(skill);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -55,8 +66,8 @@ router.post('/import', async (req: Request, res: Response) => {
     }
 });
 
-// PATCH update skill
-router.patch('/:id', async (req, res) => {
+// PUT update skill
+router.put('/:id', async (req, res) => {
     try {
         const updated = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updated);

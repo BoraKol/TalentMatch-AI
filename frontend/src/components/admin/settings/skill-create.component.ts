@@ -35,15 +35,49 @@ import { environment } from '../../../environments/environment';
         <div *ngIf="mode() === 'manual' || isEditMode()" class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <!-- Skill Name -->
-            <div class="mb-6">
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Skill Name <span class="text-red-500">*</span>
-              </label>
-              <input type="text" formControlName="name"
-                     class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                     placeholder="e.g., JavaScript">
-              <p *ngIf="form.get('name')?.touched && form.get('name')?.errors?.['required']" 
-                 class="text-red-500 text-sm mt-1">Skill name is required</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                  Skill Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" formControlName="name"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="e.g., JavaScript">
+                <p *ngIf="form.get('name')?.touched && form.get('name')?.errors?.['required']" 
+                   class="text-red-500 text-sm mt-1">Skill name is required</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">
+                  Skill Type
+                </label>
+                <select formControlName="skillType"
+                        class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                  <option value="primary">Primary</option>
+                  <option value="secondary">Secondary</option>
+                  <option value="soft">Soft Skill</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Category
+                  </label>
+                  <input type="text" formControlName="category"
+                         class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="e.g., Software Development">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">
+                    Subcategory
+                  </label>
+                  <input type="text" formControlName="subcategory"
+                         class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="e.g., Frontend">
+                </div>
             </div>
 
             <!-- Active Checkbox -->
@@ -134,6 +168,9 @@ export class SkillCreateComponent implements OnInit {
 
   form = this.fb.group({
     name: ['', Validators.required],
+    category: [''],
+    subcategory: [''],
+    skillType: ['primary'],
     isActive: [true]
   });
 
@@ -161,6 +198,9 @@ export class SkillCreateComponent implements OnInit {
       next: (data) => {
         this.form.patchValue({
           name: data.name,
+          category: data.category || '',
+          subcategory: data.subcategory || '',
+          skillType: data.skillType || 'primary',
           isActive: data.isActive
         });
       },

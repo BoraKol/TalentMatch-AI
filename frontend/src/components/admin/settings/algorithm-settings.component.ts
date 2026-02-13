@@ -113,8 +113,8 @@ export class AlgorithmSettingsComponent implements OnInit {
     this.http.get<any>(`${environment.apiUrl}/settings/algorithm`).subscribe({
       next: (data) => {
         if (data && data.length > 0) {
-          const order = ['primary_skills', 'soft_skills', 'nice_to_have', 'secondary_skills'];
-          this.settings.set(data.sort((a: AlgorithmSetting, b: AlgorithmSetting) => {
+          const order = ['primary_skills', 'secondary_skills', 'soft_skills'];
+          this.settings.set(data.filter((s: any) => s.slug !== 'nice_to_have').sort((a: AlgorithmSetting, b: AlgorithmSetting) => {
             return order.indexOf(a.slug) - order.indexOf(b.slug);
           }));
         } else {
@@ -129,7 +129,6 @@ export class AlgorithmSettingsComponent implements OnInit {
     const defaults: AlgorithmSetting[] = [
       { fieldName: 'Primary Skills', fieldValue: 10, slug: 'primary_skills', createdAt: new Date().toISOString() },
       { fieldName: 'Secondary Skills', fieldValue: 5, slug: 'secondary_skills', createdAt: new Date().toISOString() },
-      { fieldName: 'Nice to Have', fieldValue: 2, slug: 'nice_to_have', createdAt: new Date().toISOString() },
       { fieldName: 'Soft Skills', fieldValue: 3, slug: 'soft_skills', createdAt: new Date().toISOString() }
     ];
     this.settings.set(defaults);

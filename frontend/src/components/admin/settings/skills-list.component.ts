@@ -8,6 +8,9 @@ import { environment } from '../../../environments/environment';
 interface Skill {
   _id?: string;
   name: string;
+  category?: string;
+  subcategory?: string;
+  skillType: 'primary' | 'secondary' | 'soft';
   isActive: boolean;
   createdAt?: string;
 }
@@ -36,6 +39,8 @@ interface Skill {
             <tr>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ID</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Category</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
               <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Created On</th>
               <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
@@ -44,7 +49,22 @@ interface Skill {
           <tbody class="divide-y divide-slate-100">
             <tr *ngFor="let skill of paginatedSkills(); let i = index" class="hover:bg-slate-50">
               <td class="px-6 py-4 text-sm text-slate-500">{{ (currentPage() - 1) * itemsPerPage() + i + 1 }}</td>
-              <td class="px-6 py-4 text-sm font-medium text-slate-800">{{ skill.name }}</td>
+              <td class="px-6 py-4 text-sm font-medium text-slate-800">
+                {{ skill.name }}
+                <div class="text-xs text-slate-400 font-normal" *ngIf="skill.subcategory">{{ skill.subcategory }}</div>
+              </td>
+              <td class="px-6 py-4 text-sm text-slate-600">{{ skill.category || '-' }}</td>
+              <td class="px-6 py-4">
+                <span [class.bg-blue-100]="skill.skillType === 'primary'" 
+                      [class.text-blue-800]="skill.skillType === 'primary'"
+                      [class.bg-indigo-100]="skill.skillType === 'secondary'"
+                      [class.text-indigo-800]="skill.skillType === 'secondary'"
+                      [class.bg-purple-100]="skill.skillType === 'soft'"
+                      [class.text-purple-800]="skill.skillType === 'soft'"
+                      class="px-2 py-1 text-xs font-medium rounded-full">
+                  {{ (skill.skillType | titlecase) || 'Primary' }}
+                </span>
+              </td>
               <td class="px-6 py-4">
                 <span [class]="skill.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'" 
                       class="px-2 py-1 text-xs font-semibold rounded-full">
@@ -64,7 +84,7 @@ interface Skill {
               </td>
             </tr>
             <tr *ngIf="skills().length === 0">
-              <td colspan="5" class="px-6 py-12 text-center text-slate-500">No skills found</td>
+              <td colspan="7" class="px-6 py-12 text-center text-slate-500">No skills found</td>
             </tr>
           </tbody>
         </table>
@@ -155,7 +175,7 @@ export class SkillsListComponent implements OnInit {
 
   toggleStatus(skill: Skill) {
     const newStatus = !skill.isActive;
-    this.http.patch(`${environment.apiUrl}/skills/${skill._id}`, { isActive: newStatus }).subscribe({
+    this.http.put(`${environment.apiUrl}/skills/${skill._id}`, { isActive: newStatus }).subscribe({
       next: () => {
         skill.isActive = newStatus;
         this.skills.set([...this.skills()]);
