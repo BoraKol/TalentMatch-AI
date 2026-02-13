@@ -294,7 +294,10 @@ interface Recommendation {
                             <div class="flex-1">
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-bold text-slate-800">{{ m.title }}</span>
-                                    <span class="text-[10px] px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-md font-black">{{ m.score }}%</span>
+                                    <span class="text-xs px-2 py-0.5 rounded-md font-bold text-white shadow-sm"
+                                        [ngClass]="getScoreColorClass(m.score)">
+                                        {{ (m.score / 10).toFixed(1) }}/10
+                                    </span>
                                 </div>
                                 <p class="text-xs text-slate-500">{{ m.company }}</p>
                                 <p class="text-[10px] text-slate-400 mt-1 italic">"{{ m.analysis | slice:0:100 }}..."</p>
@@ -595,5 +598,11 @@ export class ReferralHubComponent implements OnInit {
         alert(err.error?.error || 'Failed to create referral');
       }
     });
+  }
+
+  getScoreColorClass(score: number): string {
+    if (score >= 80) return 'bg-emerald-500';
+    if (score >= 60) return 'bg-amber-500';
+    return 'bg-red-500';
   }
 }

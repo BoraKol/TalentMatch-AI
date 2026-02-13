@@ -13,6 +13,9 @@ router.get('/employer', authMiddleware, (req, res) => analyticsController.getEmp
 // Admin overview stats (requires auth)
 router.get('/admin', authMiddleware, (req, res) => analyticsController.getAdminStats(req, res));
 
+// General Dashboard Metrics (for /analytics/dashboard for Super Admin)
+router.get('/dashboard', authMiddleware, (req, res) => analyticsController.getDashboardMetrics(req, res));
+
 // Public: Active institutions list (for employer registration dropdown)
 router.get('/institutions/active', (req, res) => analyticsController.getActiveInstitutions(req, res));
 

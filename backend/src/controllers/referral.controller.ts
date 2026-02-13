@@ -21,7 +21,7 @@ class ReferralController {
             const user = req.user;
             let institutionId = undefined;
 
-            if (user?.role === 'institution_admin') {
+            if (user?.role === 'institution_admin' || user?.role === 'institution_user') {
                 const dbUser = await User.findById(user.id);
                 if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
                 institutionId = dbUser.institution.toString();
@@ -77,7 +77,7 @@ class ReferralController {
             const user = req.user;
             let institutionId = undefined;
 
-            if (user?.role === 'institution_admin') {
+            if (user?.role === 'institution_admin' || user?.role === 'institution_user') {
                 const dbUser = await User.findById(user.id);
                 if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
                 institutionId = dbUser.institution.toString();
@@ -156,7 +156,7 @@ class ReferralController {
             const user = await User.findById(userId);
 
             if (!user?.institution && user?.role !== 'super_admin') {
-                return res.status(403).json({ error: 'Only institution admins or super admins can trigger auto-match' });
+                return res.status(403).json({ error: 'Only institution admins, users or super admins can trigger auto-match' });
             }
 
             const institutionId = user?.institution?.toString();
@@ -171,6 +171,7 @@ class ReferralController {
             // For super_admin, targetInstId can be undefined (implies global scan)
             // autoMatchCandidates now handles optional institutionId
             const recommendations = await referralService.autoMatchCandidates(targetInstId);
+            console.log(`Auto-match found ${recommendations.length} recommendations for inst: ${targetInstId || 'global'}`);
             res.json(recommendations);
         } catch (error: any) {
             this.handleError(res, error);

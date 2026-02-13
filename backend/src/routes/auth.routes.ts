@@ -11,6 +11,7 @@ router.post('/register/institution', authController.registerInstitution.bind(aut
 router.post('/set-password', authController.setPassword.bind(authController));
 router.post('/forgot-password', authController.forgotPassword.bind(authController));
 router.post('/reset-password', authController.resetPassword.bind(authController));
+router.post('/logout', authController.logout.bind(authController));
 
 // Public invitation routes
 router.get('/verify-invite/:token', (req, res) => inviteController.verifyInvite(req, res));

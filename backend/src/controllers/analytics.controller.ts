@@ -139,6 +139,17 @@ export class AnalyticsController extends BaseController {
         }
     }
 
+    // General Dashboard Metrics (for /analytics/dashboard for Super Admin)
+    async getDashboardMetrics(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const metrics = await analyticsService.getDashboardMetrics();
+            this.sendSuccess(res, metrics);
+        } catch (error: any) {
+            console.error('Dashboard Metrics Error:', error);
+            this.sendError(res, error.message);
+        }
+    }
+
     // Get list of all institutions (for employer registration dropdown)
     async getActiveInstitutions(req: AuthRequest, res: Response): Promise<void> {
         try {

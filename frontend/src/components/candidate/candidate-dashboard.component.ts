@@ -293,6 +293,14 @@ export class CandidateDashboardComponent implements OnInit {
 
   ngOnInit() {
     console.log('Candidate dashboard init');
+    const userRole = this.user()?.role;
+
+    // Prevent loading candidate data if user is not a candidate (e.g. admin viewing page via some path)
+    if (userRole !== 'candidate') {
+      console.warn('Candidate Dashboard loaded for non-candidate role:', userRole);
+      return;
+    }
+
     this.loadProfile();
     this.loadJobMatches();
     this.loadSkillGaps();

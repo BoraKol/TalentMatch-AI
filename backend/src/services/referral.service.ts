@@ -65,25 +65,33 @@ export class ReferralService {
             referralMap.get(cId)!.add(r.job.toString());
         });
 
-        // 4. For each candidate, find best matches (Score > 80)
-        const recommendations: any[] = [];
+        // 4. For each candidate, find best matches (Score > 0, we want best overall)
+        const allRecommendations: any[] = [];
 
         for (const candidate of candidates) {
             const cIdStr = candidate._id.toString();
             const matches = await aiMatchingService.findTopJobsForCandidate(cIdStr);
             const referredJobs = referralMap.get(cIdStr) || new Set<string>();
 
-            // Filter significant matches that haven't been referred yet
-            const topMatches = matches.filter(m => m.matchScore >= 80 && !referredJobs.has(m.id));
+            // Filter matches that haven't been referred yet
+            // We keep ALL matches now to find the absolute best ones platform-wide
+            const validMatches = matches.filter(m => !referredJobs.has(m.id));
 
-            if (topMatches.length > 0) {
-                recommendations.push({
+            if (validMatches.length > 0) {
+                // Sort by score
+                validMatches.sort((a, b) => b.matchScore - a.matchScore);
+
+                // Best score for this candidate (used for sorting candidates)
+                const bestScore = validMatches[0].matchScore;
+
+                allRecommendations.push({
+                    bestScore, // Internal use for sorting
                     candidate: {
                         _id: candidate._id,
                         name: `${candidate.firstName} ${candidate.lastName}`,
                         title: candidate.currentTitle
                     },
-                    matches: topMatches.map(m => ({
+                    matches: validMatches.slice(0, 3).map(m => ({
                         jobId: m.id,
                         title: m.title,
                         company: m.company,
@@ -94,7 +102,11 @@ export class ReferralService {
             }
         }
 
-        return recommendations;
+        // Sort candidates by their best match score (descending) and take top 3
+        allRecommendations.sort((a, b) => b.bestScore - a.bestScore);
+
+        // Return top 3 candidates, removing the internal 'bestScore' property if strictness needed (frontend ignores extra props usually)
+        return allRecommendations.slice(0, 3);
     }
 
     async getMatchesForCandidate(candidateId: string) {
