@@ -1,8 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, map, tap } from 'rxjs/operators';
-// import { of, BehaviorSubject } from 'rxjs'; // Unused
+import { tap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 
 export interface User {
@@ -12,7 +11,7 @@ export interface User {
     lastName?: string;
     companyName?: string;
     role: 'super_admin' | 'institution_admin' | 'institution_user' | 'employer' | 'candidate';
-    token?: string;
+    institutionId?: string;
 }
 
 @Injectable({
@@ -29,20 +28,37 @@ export class AuthService {
 
     login(credentials: any) {
         return this.http.post<any>(`${this.apiUrl}/login`, credentials).pipe(
-            tap(response => {
-                if (response.token && response.user) {
-                    const user = { ...response.user, token: response.token };
-                    this.setSession(user);
+            tap(data => {
+                if (data?.user) {
+                    this.setSession(data.user);
                 }
             })
         );
     }
 
     registerCandidate(data: any) {
-        return this.http.post(`${this.apiUrl}/register/candidate`, data);
+        return this.http.post<any>(`${this.apiUrl}/register/candidate`, data).pipe(
+            tap(data => {
+                if (data?.user) {
+                    this.setSession(data.user);
+                }
+            })
+        );
     }
 
     logout() {
+        this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
+            next: () => {
+                this.clearLocalSession();
+            },
+            error: () => {
+                // Still clear local session on error
+                this.clearLocalSession();
+            }
+        });
+    }
+
+    private clearLocalSession() {
         localStorage.removeItem('user_session');
         this.currentUser.set(null);
         this.isAuthenticated.set(false);
@@ -56,9 +72,11 @@ export class AuthService {
     }
 
     private getUserFromStorage(): User | null {
-        const userStr = localStorage.getItem('user_session');
-        return userStr ? JSON.parse(userStr) : null;
+        try {
+            const userStr = localStorage.getItem('user_session');
+            return userStr ? JSON.parse(userStr) : null;
+        } catch {
+            return null;
+        }
     }
-
-    // Method removed as AuthInterceptor handles headers
 }

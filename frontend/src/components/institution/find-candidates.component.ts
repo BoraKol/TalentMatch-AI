@@ -7,10 +7,10 @@ import { AuthService } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
 
 @Component({
-    selector: 'app-find-candidates',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
-    template: `
+  selector: 'app-find-candidates',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
+  template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
       <!-- Navbar -->
       <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
@@ -18,11 +18,7 @@ import { environment } from '../../environments/environment';
           <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
               <a routerLink="/institution/dashboard" class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                  </svg>
-                </div>
+<img src="/favicon.jpg" alt="TalentMatch AI" class="w-8 h-8 rounded-lg object-cover">
                 <span class="text-xl font-bold text-slate-800">TalentMatch AI</span>
                 <span class="ml-2 px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Institution</span>
               </a>
@@ -134,92 +130,92 @@ import { environment } from '../../environments/environment';
   `
 })
 export class FindCandidatesComponent implements OnInit {
-    private http = inject(HttpClient);
-    private router = inject(Router);
+  private http = inject(HttpClient);
+  private router = inject(Router);
 
-    isLoading = signal(true);
-    candidates = signal<any[]>([]);
-    filteredCandidates = signal<any[]>([]);
+  isLoading = signal(true);
+  candidates = signal<any[]>([]);
+  filteredCandidates = signal<any[]>([]);
 
-    searchQuery = '';
-    filterSkill = '';
-    filterRegion = '';
+  searchQuery = '';
+  filterSkill = '';
+  filterRegion = '';
 
-    availableSkills = [
-        'JavaScript', 'TypeScript', 'Python', 'Java', 'React', 'Angular', 'Node.js',
-        'AWS', 'Docker', 'SQL', 'MongoDB', 'Machine Learning', 'Data Science'
-    ];
+  availableSkills = [
+    'JavaScript', 'TypeScript', 'Python', 'Java', 'React', 'Angular', 'Node.js',
+    'AWS', 'Docker', 'SQL', 'MongoDB', 'Machine Learning', 'Data Science'
+  ];
 
-    ngOnInit() {
-        this.loadCandidates();
+  ngOnInit() {
+    this.loadCandidates();
+  }
+
+  loadCandidates() {
+    this.isLoading.set(true);
+    this.http.get<any>(`${environment.apiUrl}/candidates`).subscribe({
+      next: (res) => {
+        const candidateList = res.candidates || res || [];
+        this.candidates.set(candidateList);
+        this.filteredCandidates.set(candidateList);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.candidates.set([]);
+        this.filteredCandidates.set([]);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  onSearch() {
+    this.applyFilters();
+  }
+
+  onFilter() {
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.searchQuery = '';
+    this.filterSkill = '';
+    this.filterRegion = '';
+    this.filteredCandidates.set(this.candidates());
+  }
+
+  applyFilters() {
+    let results = this.candidates();
+
+    // Search filter
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      results = results.filter(c =>
+        c.firstName?.toLowerCase().includes(query) ||
+        c.lastName?.toLowerCase().includes(query) ||
+        c.skills?.some((s: string) => s.toLowerCase().includes(query))
+      );
     }
 
-    loadCandidates() {
-        this.isLoading.set(true);
-        this.http.get<any>(`${environment.apiUrl}/candidates`).subscribe({
-            next: (res) => {
-                const candidateList = res.candidates || res || [];
-                this.candidates.set(candidateList);
-                this.filteredCandidates.set(candidateList);
-                this.isLoading.set(false);
-            },
-            error: () => {
-                this.candidates.set([]);
-                this.filteredCandidates.set([]);
-                this.isLoading.set(false);
-            }
-        });
+    // Skill filter
+    if (this.filterSkill) {
+      results = results.filter(c => c.skills?.includes(this.filterSkill));
     }
 
-    onSearch() {
-        this.applyFilters();
+    // Region filter
+    if (this.filterRegion) {
+      results = results.filter(c => c.region === this.filterRegion);
     }
 
-    onFilter() {
-        this.applyFilters();
-    }
+    this.filteredCandidates.set(results);
+  }
 
-    clearFilters() {
-        this.searchQuery = '';
-        this.filterSkill = '';
-        this.filterRegion = '';
-        this.filteredCandidates.set(this.candidates());
-    }
+  getInitials(candidate: any): string {
+    const first = candidate.firstName?.[0] || '';
+    const last = candidate.lastName?.[0] || '';
+    return (first + last).toUpperCase() || '?';
+  }
 
-    applyFilters() {
-        let results = this.candidates();
-
-        // Search filter
-        if (this.searchQuery) {
-            const query = this.searchQuery.toLowerCase();
-            results = results.filter(c =>
-                c.firstName?.toLowerCase().includes(query) ||
-                c.lastName?.toLowerCase().includes(query) ||
-                c.skills?.some((s: string) => s.toLowerCase().includes(query))
-            );
-        }
-
-        // Skill filter
-        if (this.filterSkill) {
-            results = results.filter(c => c.skills?.includes(this.filterSkill));
-        }
-
-        // Region filter
-        if (this.filterRegion) {
-            results = results.filter(c => c.region === this.filterRegion);
-        }
-
-        this.filteredCandidates.set(results);
-    }
-
-    getInitials(candidate: any): string {
-        const first = candidate.firstName?.[0] || '';
-        const last = candidate.lastName?.[0] || '';
-        return (first + last).toUpperCase() || '?';
-    }
-
-    contactCandidate(candidate: any) {
-        // Could open a modal or navigate to contact page
-        alert(`Contact feature coming soon!\nEmail: ${candidate.email || 'Not available'}`);
-    }
+  contactCandidate(candidate: any) {
+    // Could open a modal or navigate to contact page
+    alert(`Contact feature coming soon!\nEmail: ${candidate.email || 'Not available'}`);
+  }
 }

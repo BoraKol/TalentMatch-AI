@@ -15,7 +15,16 @@ export class AuthController extends BaseController {
         try {
             const { email, password } = req.body;
             const result = await this.authService.login(email, password);
-            this.sendSuccess(res, result, 'Login successful');
+
+            // Set cookie
+            res.cookie('token', result.token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000 // 1 day
+            });
+
+            this.sendSuccess(res, { user: result.user }, 'Login successful');
         } catch (error: any) {
             const status = error.statusCode || 401;
             this.sendError(res, error.message, status);
@@ -26,7 +35,16 @@ export class AuthController extends BaseController {
     async registerCandidate(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.authService.registerCandidate(req.body);
-            this.sendSuccess(res, result, 'Candidate registered successfully', 201);
+
+            // Set cookie
+            res.cookie('token', result.token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000 // 1 day
+            });
+
+            this.sendSuccess(res, { user: result.user }, 'Candidate registered successfully', 201);
         } catch (error: any) {
             this.sendError(res, error.message);
         }
@@ -56,10 +74,24 @@ export class AuthController extends BaseController {
     async setPassword(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.authService.setPassword(req.body);
-            this.sendSuccess(res, result, 'Password set successfully');
+
+            // Set cookie
+            res.cookie('token', result.token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 24 * 60 * 60 * 1000 // 1 day
+            });
+
+            this.sendSuccess(res, { user: result.user }, 'Password set successfully');
         } catch (error: any) {
             this.sendError(res, error.message);
         }
+    }
+
+    async logout(req: Request, res: Response): Promise<void> {
+        res.clearCookie('token');
+        this.sendSuccess(res, null, 'Logged out successfully');
     }
 }
 

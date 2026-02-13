@@ -1,14 +1,15 @@
 
 import { Referral, IReferral } from '../models/referral.model';
-import Candidate from '../models/candidate.model';
-import Job from '../models/job.model';
+import { candidateRepository } from '../repositories/candidate.repository';
+import { referralRepository } from '../repositories/referral.repository';
+import { jobRepository } from '../repositories/job.repository';
 import { aiMatchingService } from './ai-matching.service';
 import emailService from './email.service';
 import { CreateReferralSchema, RespondReferralSchema, UpdateReferralStatusSchema } from '../validators/referral.validator';
 
 export class ReferralService {
 
-    async getCandidatesForReferral(search?: string) {
+    async getCandidatesForReferral(search?: string, institutionId?: string) {
         const query: any = {};
         if (search) {
             query.$or = [
@@ -19,10 +20,15 @@ export class ReferralService {
             ];
         }
 
-        const candidates = await Candidate.find(query)
-            .populate('user', 'email')
-            .sort({ createdAt: -1 })
-            .lean();
+        // Use repository with population
+        let candidates = await candidateRepository.findWithUser(query);
+
+        // Filter by institution if provided
+        if (institutionId) {
+            candidates = candidates.filter((c: any) =>
+                c.user && c.user.institution && c.user.institution.toString() === institutionId
+            );
+        }
 
         return candidates.map((c: any) => ({
             _id: c._id,
@@ -36,119 +42,142 @@ export class ReferralService {
         }));
     }
 
+    async autoMatchCandidates(institutionId?: string) {
+        // 1. Fetch candidates (for institution if provided, else all)
+        const candidates = institutionId
+            ? await candidateRepository.findInInstitution(institutionId)
+            : await candidateRepository.find({});
+
+        if (candidates.length === 0) return [];
+
+        // 2. Fetch all active jobs
+        const jobs = await jobRepository.findActive();
+        if (jobs.length === 0) return [];
+
+        // 3. Fetch all existing referrals for these candidates once to avoid N+1 queries
+        const candidateIds = candidates.map(c => c._id.toString());
+        const existingReferrals = await referralRepository.find({ candidate: { $in: candidateIds } });
+
+        const referralMap = new Map<string, Set<string>>();
+        existingReferrals.forEach(r => {
+            const cId = r.candidate.toString();
+            if (!referralMap.has(cId)) referralMap.set(cId, new Set());
+            referralMap.get(cId)!.add(r.job.toString());
+        });
+
+        // 4. For each candidate, find best matches (Score > 80)
+        const recommendations: any[] = [];
+
+        for (const candidate of candidates) {
+            const cIdStr = candidate._id.toString();
+            const matches = await aiMatchingService.findTopJobsForCandidate(cIdStr);
+            const referredJobs = referralMap.get(cIdStr) || new Set<string>();
+
+            // Filter significant matches that haven't been referred yet
+            const topMatches = matches.filter(m => m.matchScore >= 80 && !referredJobs.has(m.id));
+
+            if (topMatches.length > 0) {
+                recommendations.push({
+                    candidate: {
+                        _id: candidate._id,
+                        name: `${candidate.firstName} ${candidate.lastName}`,
+                        title: candidate.currentTitle
+                    },
+                    matches: topMatches.map(m => ({
+                        jobId: m.id,
+                        title: m.title,
+                        company: m.company,
+                        score: m.matchScore,
+                        analysis: m.aiAnalysis
+                    }))
+                });
+            }
+        }
+
+        return recommendations;
+    }
+
     async getMatchesForCandidate(candidateId: string) {
-        const candidate = await Candidate.findById(candidateId);
+        const candidate = await candidateRepository.findOne(candidateId);
         if (!candidate) throw new Error('Candidate not found');
 
         const matches = await aiMatchingService.findTopJobsForCandidate(candidateId);
 
-        const existingReferrals = await Referral.find({ candidate: candidateId })
-            .select('job status')
-            .lean();
-
-        const referredJobMap = new Map(
-            existingReferrals.map(r => [r.job.toString(), r.status])
-        );
+        // Find existing referrals for this candidate to mark them
+        const existingReferrals = await referralRepository.find({ candidate: candidateId });
+        const referredJobIds = new Map(existingReferrals.map(r => [r.job.toString(), r.status]));
 
         return {
             candidate: {
-                _id: candidate._id,
                 name: `${candidate.firstName} ${candidate.lastName}`,
-                title: candidate.currentTitle,
-                skills: candidate.skills
+                title: candidate.currentTitle
             },
             matches: matches.map(m => ({
                 ...m,
-                referralStatus: referredJobMap.get(m.id) || null,
-                isReferred: referredJobMap.has(m.id)
+                isReferred: referredJobIds.has(m.id),
+                referralStatus: referredJobIds.get(m.id) || null
             }))
         };
     }
 
-    async createReferral(userId: string, data: { candidateId: string; jobId: string; aiMatchScore?: number; aiAnalysis?: string; notes?: string }) {
+    async createReferral(referredBy: string, data: any) {
         // Validation
         const validated = await CreateReferralSchema.parseAsync(data);
-        const { candidateId, jobId, aiMatchScore, aiAnalysis, notes } = validated;
 
-        const [candidate, job] = await Promise.all([
-            Candidate.findById(candidateId).populate('user', 'email'),
-            Job.findById(jobId)
-        ]);
-
-        if (!candidate) throw new Error('Candidate not found');
-        if (!job) throw new Error('Job not found');
-
-        const existing = await Referral.findOne({ candidate: candidateId, job: jobId });
-        if (existing) {
-            const error: any = new Error('This candidate has already been referred to this job');
-            error.code = 11000;
-            throw error;
-        }
-
-        const referral = await Referral.create({
-            candidate: candidateId,
-            job: jobId,
-            referredBy: userId,
-            aiMatchScore: aiMatchScore || 0,
-            aiAnalysis: aiAnalysis || '',
-            notes: notes || '',
-            status: 'pending'
+        // Check if already referred
+        const existing = await referralRepository.findOneByFilter({
+            candidate: validated.candidateId,
+            job: validated.jobId
         });
 
-        // Email Notification
-        try {
-            const candidateEmail = (candidate.user as any)?.email;
-            const candidateName = `${candidate.firstName} ${candidate.lastName}`;
-
-            if (candidateEmail) {
-                await emailService.sendReferralNotification(
-                    candidateEmail,
-                    candidateName,
-                    job.title,
-                    job.company,
-                    referral._id.toString()
-                );
-            }
-        } catch (emailError) {
-            console.error('Failed to send referral email:', emailError);
+        if (existing) {
+            throw new Error('This candidate has already been referred to this job');
         }
 
-        return referral;
+        const referralData = {
+            candidate: validated.candidateId as any,
+            job: validated.jobId as any,
+            referredBy: referredBy as any,
+            status: 'pending' as any,
+            aiMatchScore: validated.aiMatchScore,
+            aiAnalysis: validated.aiAnalysis,
+            notes: validated.notes,
+            referredAt: new Date()
+        };
+
+        return await referralRepository.create(referralData);
     }
 
-    async getAllReferrals(status?: string) {
+    async getAllReferrals(status?: string, institutionId?: string) {
         const query: any = {};
         if (status && status !== 'all') query.status = status;
 
-        return await Referral.find(query)
-            .populate({ path: 'candidate', select: 'firstName lastName currentTitle skills' })
-            .populate({ path: 'job', select: 'title company location employmentType salaryRange' })
-            .populate({ path: 'referredBy', select: 'firstName lastName' })
-            .sort({ referredAt: -1 })
-            .lean();
+        let referrals = await referralRepository.findWithDetails(query);
+
+        if (institutionId) {
+            referrals = (referrals as any[]).filter((r: any) =>
+                r.candidate?.user?.institution?.toString() === institutionId
+            );
+        }
+
+        return referrals;
     }
 
     async getMyReferrals(userId: string) {
-        const candidate = await Candidate.findOne({ user: userId });
+        const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) throw new Error('Candidate profile not found');
 
-        return await Referral.find({ candidate: candidate._id })
-            .populate({
-                path: 'job',
-                select: 'title company location employmentType salaryRange description requiredSkills preferredSkills experienceRequired'
-            })
-            .sort({ referredAt: -1 })
-            .lean();
+        return await referralRepository.findByCandidate(candidate._id.toString());
     }
 
     async respondToReferral(userId: string, referralId: string, action: 'accepted' | 'declined', message?: string) {
         // Validation
         await RespondReferralSchema.parseAsync({ action, message });
 
-        const candidate = await Candidate.findOne({ user: userId });
+        const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) throw new Error('Candidate profile not found');
 
-        const referral = await Referral.findOne({
+        const referral = await referralRepository.findOneByFilter({
             _id: referralId,
             candidate: candidate._id,
             status: 'pending'
@@ -156,21 +185,22 @@ export class ReferralService {
 
         if (!referral) throw new Error('Referral not found or already responded');
 
-        referral.status = action;
-        referral.candidateResponse = message || '';
-        referral.updatedAt = new Date();
-        return await referral.save();
+        return await referralRepository.update(referralId, {
+            status: action as any,
+            candidateResponse: message || '',
+            updatedAt: new Date()
+        });
     }
 
     async updateReferralStatus(referralId: string, status: string, notes?: string) {
         // Validation
         await UpdateReferralStatusSchema.parseAsync({ status, notes });
 
-        const referral = await Referral.findByIdAndUpdate(
-            referralId,
-            { status, ...(notes && { notes }), updatedAt: new Date() },
-            { new: true }
-        );
+        const referral = await referralRepository.update(referralId, {
+            status: status as any,
+            ...(notes && { notes }),
+            updatedAt: new Date()
+        });
 
         if (!referral) throw new Error('Referral not found');
 

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../types/express';
 import { inviteService, InviteService } from '../services/invite.service';
 import { BaseController } from './base.controller';
+import User from '../models/user.model';
 
 export class InviteController extends BaseController {
     private inviteService: InviteService;
@@ -14,19 +15,30 @@ export class InviteController extends BaseController {
     // Send invite (Super Admin can invite all types)
     async sendInvite(req: AuthRequest, res: Response): Promise<void> {
         try {
-            const { email, inviteType, institutionId } = req.body;
-            const inviterId = req.user?.id;
+            let { email, inviteType, institutionId } = req.body;
+            const user = req.user;
 
             if (!email || !inviteType) {
                 this.sendError(res, 'Email and inviteType are required', 400);
                 return;
             }
 
+            // If institution_admin, force their institutionId
+            if (user?.role === 'institution_admin') {
+                const dbUser = await User.findById(user.id);
+                if (!dbUser?.institution) {
+                    this.sendError(res, 'User is not linked to an institution', 403);
+                    return;
+                }
+                institutionId = dbUser.institution.toString();
+                inviteType = 'employer'; // For simplicity in this flow, or keep as requested if logic allows
+            }
+
             const result = await this.inviteService.sendInvite({
                 email,
                 inviteType,
                 institutionId,
-                inviterId
+                inviterId: user?.id
             });
 
             this.sendSuccess(res, result, 'Invite sent successfully', 201);
@@ -39,8 +51,16 @@ export class InviteController extends BaseController {
     async getPendingInvites(req: AuthRequest, res: Response): Promise<void> {
         try {
             const { type } = req.query;
-            const invites = await this.inviteService.getPendingInvites(type as string);
-            this.sendSuccess(res, invites);
+            const user = req.user;
+            let filterInstitutionId = undefined;
+
+            if (user?.role === 'institution_admin') {
+                const dbUser = await User.findById(user.id);
+                filterInstitutionId = dbUser?.institution?.toString();
+            }
+
+            const invites = await this.inviteService.getPendingInvites(type as string, filterInstitutionId);
+            this.sendSuccess(res, { invites });
         } catch (error: any) {
             this.sendError(res, error.message);
         }
@@ -101,11 +121,19 @@ export class InviteController extends BaseController {
     // Get institution user count (for checking limits)
     async getInstitutionUsers(req: AuthRequest, res: Response): Promise<void> {
         try {
-            const { institutionId } = req.params;
-            // This logic might be better in a separate InstitutionService/Controller, 
-            // but keeping it here as it was original.
-            // For now, let's keep it simple as it's a "get" operation.
-            // In a full refactor, this moves to InstitutionService.
+            let { institutionId } = req.params;
+            const user = req.user;
+
+            // If no ID provided or if caller is institution_admin, resolve from session
+            if (!institutionId || user?.role === 'institution_admin') {
+                const dbUser = await User.findById(user?.id);
+                if (!dbUser?.institution) {
+                    this.sendError(res, 'No institution found for this user', 404);
+                    return;
+                }
+                institutionId = dbUser.institution.toString();
+            }
+
             const result = await this.inviteService.getInstitutionUsers(institutionId);
             this.sendSuccess(res, result);
         } catch (error: any) {

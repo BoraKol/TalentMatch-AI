@@ -1,15 +1,14 @@
 
-import Job from '../models/job.model';
-import Candidate from '../models/candidate.model';
-import Application from '../models/application.model';
-import SavedJob from '../models/saved-job.model';
-import AppSetting from '../models/app-setting.model';
+import { jobRepository } from '../repositories/job.repository';
+import { candidateRepository } from '../repositories/candidate.repository';
+import { applicationRepository } from '../repositories/application.repository';
+import { savedJobRepository } from '../repositories/saved-job.repository';
 
 export class JobDiscoveryService {
 
     async discoverJobs(userId: string, queryParams: any) {
         // Find candidate profile
-        const candidate = await Candidate.findOne({ user: userId });
+        const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) {
             throw new Error('Candidate profile not found. Please complete your profile first.');
         }
@@ -21,26 +20,21 @@ export class JobDiscoveryService {
         const typeFilter = queryParams.type as string;
         const minScore = parseInt(queryParams.minScore as string) || 0;
 
-        // Build job query
-        const jobQuery: any = { isActive: true };
-        if (locationFilter) jobQuery.location = { $regex: locationFilter, $options: 'i' };
-        if (typeFilter) jobQuery.employmentType = typeFilter;
-
-        // Fetch jobs, applications, and saved jobs in parallel
+        // Fetch jobs, applications, and saved jobs in parallel using Repositories
         const [jobs, applications, savedJobs] = await Promise.all([
-            Job.find(jobQuery).sort({ createdAt: -1 }).lean(),
-            Application.find({ candidate: candidate._id }).select('job').lean(),
-            SavedJob.find({ candidate: candidate._id }).select('job').lean()
+            jobRepository.findActiveWithFilters({ location: locationFilter, type: typeFilter }),
+            applicationRepository.findByCandidate(candidate._id.toString()),
+            savedJobRepository.findByCandidate(candidate._id.toString())
         ]);
 
-        const appliedJobIds = new Set(applications.map(a => a.job.toString()));
-        const savedJobIds = new Set(savedJobs.map(s => s.job.toString()));
+        const appliedJobIds = new Set(applications.map((a: any) => a.job.toString()));
+        const savedJobIds = new Set(savedJobs.map((s: any) => s.job.toString()));
 
         // Score each job against candidate skills
         const candidateSkills = new Set((candidate.skills || []).map((s: string) => s.toLowerCase()));
         const candidateTitle = (candidate.currentTitle || '').toLowerCase();
 
-        const scoredJobs = jobs.map(job => {
+        const scoredJobs = jobs.map((job: any) => {
             const requiredSkills = (job.requiredSkills || []).map((s: string) => s.toLowerCase());
             const preferredSkills = (job.preferredSkills || []).map((s: string) => s.toLowerCase());
             const allJobSkills = [...requiredSkills, ...preferredSkills];
@@ -115,22 +109,20 @@ export class JobDiscoveryService {
     }
 
     async getSkillGaps(userId: string) {
-        const candidate = await Candidate.findOne({ user: userId });
+        const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) {
             throw new Error('Candidate profile not found');
         }
 
         // Get all active jobs and count skill frequency
-        const jobs = await Job.find({ isActive: true })
-            .select('requiredSkills preferredSkills title')
-            .lean();
+        const jobs = await jobRepository.findActive();
 
         const candidateSkills = new Set((candidate.skills || []).map((s: string) => s.toLowerCase()));
 
         // Count how many jobs require each skill
         const skillDemand: Record<string, { count: number; jobs: string[] }> = {};
 
-        for (const job of jobs) {
+        for (const job of (jobs as any[])) {
             const allSkills = [
                 ...(job.requiredSkills || []),
                 ...(job.preferredSkills || [])
@@ -164,7 +156,7 @@ export class JobDiscoveryService {
             currentSkills: candidate.skills || [],
             gaps: topGaps,
             totalJobs: jobs.length,
-            matchableJobs: jobs.filter(job => {
+            matchableJobs: jobs.filter((job: any) => {
                 const required = (job.requiredSkills || []).map((s: string) => s.toLowerCase());
                 return required.some((s: string) => candidateSkills.has(s));
             }).length

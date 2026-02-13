@@ -38,6 +38,7 @@ router.use('/employers', employerRoutes);
 router.use('/job-discovery', jobDiscoveryRoutes);
 router.use('/saved-jobs', savedJobRoutes);
 router.use('/referrals', referralRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;
 

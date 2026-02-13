@@ -4,13 +4,12 @@ import { config } from '../config';
 import { AuthRequest, AuthUser } from '../types/express';
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
+    // @ts-ignore
+    const token = (req as any).cookies?.token;
 
-    if (!authHeader) {
+    if (!token) {
         return res.status(401).json({ error: 'No token provided' });
     }
-
-    const token = authHeader.split(' ')[1]; // Bearer <token>
 
     try {
         const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;

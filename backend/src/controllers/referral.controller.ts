@@ -2,6 +2,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/express';
 import { referralService } from '../services/referral.service';
+import User from '../models/user.model';
 import { ZodError } from 'zod';
 
 class ReferralController {
@@ -17,7 +18,16 @@ class ReferralController {
     async getCandidatesForReferral(req: AuthRequest, res: Response) {
         try {
             const search = req.query.search as string;
-            const candidates = await referralService.getCandidatesForReferral(search);
+            const user = req.user;
+            let institutionId = undefined;
+
+            if (user?.role === 'institution_admin') {
+                const dbUser = await User.findById(user.id);
+                if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
+                institutionId = dbUser.institution.toString();
+            }
+
+            const candidates = await referralService.getCandidatesForReferral(search, institutionId);
             res.json(candidates);
         } catch (error: any) {
             this.handleError(res, error);
@@ -64,7 +74,16 @@ class ReferralController {
     async getAllReferrals(req: AuthRequest, res: Response) {
         try {
             const status = req.query.status as string;
-            const referrals = await referralService.getAllReferrals(status);
+            const user = req.user;
+            let institutionId = undefined;
+
+            if (user?.role === 'institution_admin') {
+                const dbUser = await User.findById(user.id);
+                if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
+                institutionId = dbUser.institution.toString();
+            }
+
+            const referrals = await referralService.getAllReferrals(status, institutionId);
             res.json(referrals);
         } catch (error: any) {
             this.handleError(res, error);
@@ -128,6 +147,33 @@ class ReferralController {
                 return res.status(404).json({ error: error.message });
             }
             res.status(500).json({ error: error.message });
+        }
+    }
+
+    async autoMatch(req: AuthRequest, res: Response) {
+        try {
+            const userId = req.user?.id;
+            const user = await User.findById(userId);
+
+            if (!user?.institution && user?.role !== 'super_admin') {
+                return res.status(403).json({ error: 'Only institution admins or super admins can trigger auto-match' });
+            }
+
+            const institutionId = user?.institution?.toString();
+            // Prioritize query param, fallback to user's institution
+            const targetInstId = (req.query.institutionId as string) || institutionId;
+
+            // If user has no institution (Super Admin) AND didn't provide one, implies global scan
+            if (!targetInstId && user?.role !== 'super_admin') {
+                return res.status(400).json({ error: 'No institution associated with your account' });
+            }
+
+            // For super_admin, targetInstId can be undefined (implies global scan)
+            // autoMatchCandidates now handles optional institutionId
+            const recommendations = await referralService.autoMatchCandidates(targetInstId);
+            res.json(recommendations);
+        } catch (error: any) {
+            this.handleError(res, error);
         }
     }
 }

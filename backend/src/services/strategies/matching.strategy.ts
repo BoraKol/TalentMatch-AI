@@ -31,6 +31,8 @@ export interface JobMatch {
     description?: string;
     location?: string;
     type?: string;
+    isReferred?: boolean;
+    referralStatus?: string | null;
 }
 
 export interface MatchResult {

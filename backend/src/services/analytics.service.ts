@@ -1,53 +1,28 @@
 import { CandidateService } from './candidate.service';
-import Candidate from '../models/candidate.model';
-import Job from '../models/job.model';
-import User from '../models/user.model';
+import { candidateRepository } from '../repositories/candidate.repository';
+import { jobRepository } from '../repositories/job.repository';
+import { userRepository } from '../repositories/user.repository';
 
 export class AnalyticsService {
     async getDashboardMetrics() {
-        // Aggregate Data
-        const totalCandidates = await Candidate.countDocuments();
-        const totalJobs = await Job.countDocuments();
-        const totalUsers = await User.countDocuments();
-
-        // Skill Distribution
-        const skillsAggregation = await Candidate.aggregate([
-            { $unwind: "$skills" },
-            { $group: { _id: "$skills", count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 }
+        // Aggregate Data via Repositories (or direct aggregation if complex)
+        // Note: For complex aggregations, repositories should have dedicated methods.
+        const [totalCandidates, totalJobs, totalUsers] = await Promise.all([
+            candidateRepository.count({}),
+            jobRepository.count({}),
+            userRepository.count({})
         ]);
+
+        // Skill Distribution - ideally moved to repository
+        const skillsAggregation = await candidateRepository.getSkillDistribution(10);
 
         // Experience Distribution
-        const experienceAggregation = await Candidate.aggregate([
-            {
-                $bucket: {
-                    groupBy: "$experience",
-                    boundaries: [0, 2, 5, 10, 20],
-                    default: "20+",
-                    output: { count: { $sum: 1 } }
-                }
-            }
-        ]);
+        const experienceAggregation = await candidateRepository.getExperienceDistribution();
 
-        // Hores by Institution
-        const hiresByInstitution = await Candidate.aggregate([
-            { $match: { status: 'hired' } },
-            { $group: { _id: "$institution", count: { $sum: 1 } } },
-            { $sort: { count: -1 } }
-        ]);
+        // Hires by Institution
+        const hiresByInstitution = await candidateRepository.getHiresByInstitution();
 
-        // Employers by Hires (Mock logic: Assuming each job represents a hire capacity or using aggregated Job Company data)
-        // Since we don't have explicit "Candidate X hired by Company Y" link in Candidate (only Status),
-        // we will approximate or use Job distribution as "Top Hiring Companies" based on Open Positions for now, 
-        // OR better, we update the Candidate model later to include 'hiredBy'. 
-        // For this request, let's show "Top Hiring Companies" as "Companies with most Open Jobs" 
-        // OR we can infer if we added a `hiredBy` field.
-        // Let's use Open Jobs for "Top Employers" visualization for now as it's cleaner without complex linking.
-        const topEmployers = await Job.aggregate([
-            { $group: { _id: "$company", count: { $sum: 1 } } },
-            { $sort: { count: -1 } }
-        ]);
+        const topEmployers = await jobRepository.getTopEmployers();
 
         return {
             summary: {
@@ -59,6 +34,47 @@ export class AnalyticsService {
             experience: experienceAggregation.map(e => ({ range: `${e._id} Years`, count: e.count })),
             hiresByInstitution: hiresByInstitution.map(h => ({ name: h._id, count: h.count })),
             topEmployers: topEmployers.map(e => ({ name: e._id, count: e.count }))
+        };
+    }
+
+    async getSuperAdminAnalytics() {
+        // 1. Comparative Institution Performance (Hires)
+        const institutionPerformance = await candidateRepository.getInstitutionPerformance();
+
+        // 2. Candidate Distribution by Institution
+        const candidateDistribution = await candidateRepository.getCandidateDistribution();
+
+        // 3. User Growth (Last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        // Move to userRepository
+        const userGrowth = await userRepository.getUserGrowth(sixMonthsAgo);
+
+        // 4. Job Category Distribution
+        const jobCategoryDistribution = await jobRepository.getJobCategoryDistribution();
+
+        // 5. Total Metrics
+        const [totalInstitutions, totalEmployers, totalJobs, totalCandidates] = await Promise.all([
+            userRepository.countByRole('institution_admin'),
+            userRepository.countByRole('employer'),
+            jobRepository.count({}),
+            candidateRepository.count({})
+        ]);
+
+        return {
+            comparative: {
+                institutions: institutionPerformance.map((i: any) => ({ name: i._id || 'Independent', hires: i.hires })),
+                candidatesByInst: candidateDistribution.map((c: any) => ({ name: c._id || 'Other', count: c.count })),
+                userGrowth: userGrowth.map((u: any) => ({ month: `${u._id.month}/${u._id.year}`, count: u.count })),
+                jobTypes: jobCategoryDistribution.map((j: any) => ({ type: j._id, count: j.count }))
+            },
+            totals: {
+                institutions: totalInstitutions,
+                employers: totalEmployers,
+                jobs: totalJobs,
+                candidates: totalCandidates
+            }
         };
     }
 }

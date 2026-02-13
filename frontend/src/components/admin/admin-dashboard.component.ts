@@ -23,14 +23,21 @@ interface AdminStats {
   totalCandidates: number;
   totalJobs: number;
   totalApplications: number;
-  recentRegistrations: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    institutionName: string | null;
-    registeredAt: string;
-  }[];
+  recentRegistrations: Registration[];
+  advanced?: {
+    comparative: {
+      institutions: { name: string, hires: number }[],
+      candidatesByInst: { name: string, count: number }[],
+      userGrowth: { month: string, count: number }[],
+      jobTypes: { type: string, count: number }[]
+    },
+    totals: {
+      institutions: number,
+      employers: number,
+      jobs: number,
+      candidates: number
+    }
+  };
 }
 
 interface Registration {
@@ -277,8 +284,72 @@ interface Registration {
         </div>
 
         <!-- Hires by Institution - Full Width -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-slate-800">Advanced Platform Performance</h3>
+            <div class="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full border border-indigo-100">
+              Comparative Analysis
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <!-- Comparative Institution Hires -->
+            <div>
+              <h4 class="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider">Hires per Institution</h4>
+              <div class="space-y-4">
+                <div *ngFor="let inst of advancedStats()?.comparative?.institutions; let i = index" class="group">
+                  <div class="flex justify-between text-sm mb-1.5">
+                    <span class="font-medium text-slate-700">{{ inst.name }}</span>
+                    <span class="font-bold text-indigo-600">{{ inst.hires }} hires</span>
+                  </div>
+                  <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000 group-hover:from-indigo-400 group-hover:to-purple-400"
+                         [style.width.%]="getInstHiresPercentage(inst.hires)"></div>
+                  </div>
+                </div>
+                <div *ngIf="!advancedStats()?.comparative?.institutions?.length" class="text-center py-10 text-slate-400 italic">
+                  No hiring data tracked yet
+                </div>
+              </div>
+            </div>
+
+            <!-- Job Types Distribution -->
+            <div>
+              <h4 class="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider">Job Types Distribution</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div *ngFor="let jt of advancedStats()?.comparative?.jobTypes" 
+                     class="p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-indigo-200 transition-colors">
+                  <div class="text-xs font-semibold text-slate-500 uppercase">{{ jt.type }}</div>
+                  <div class="flex items-end justify-between mt-2">
+                    <div class="text-2xl font-black text-slate-800">{{ jt.count }}</div>
+                    <div class="text-xs text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded">
+                      {{ getJobTypePercentage(jt.count) }}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Growth Chart (Simple Line Style) -->
+          <div class="mt-10 pt-8 border-t border-slate-100">
+            <h4 class="text-sm font-bold text-slate-600 mb-6 uppercase tracking-wider">Platform Growth (Last 6 Months)</h4>
+            <div class="h-40 flex items-end justify-between gap-1 px-2">
+               <div *ngFor="let point of advancedStats()?.comparative?.userGrowth" class="flex-1 flex flex-col items-center group relative">
+                 <div class="w-full bg-indigo-100 rounded-t-lg transition-all duration-500 group-hover:bg-indigo-300"
+                      [style.height.%]="getUserGrowthHeight(point.count)">
+                 </div>
+                 <div class="absolute -top-6 text-[10px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                   +{{ point.count }}
+                 </div>
+                 <span class="text-[10px] text-slate-400 mt-2 rotate-45 origin-left whitespace-nowrap">{{ point.month }}</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 class="text-lg font-bold text-slate-800 mb-6">Hired Candidates by Source</h3>
+          <h3 class="text-lg font-bold text-slate-800 mb-6">Original Performance Metrics</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div *ngFor="let inst of hiresByInstitution().slice(0, 6); let i = index" 
                  class="relative p-4 rounded-xl border border-slate-100 hover:shadow-md transition-all duration-300 group overflow-hidden">
@@ -363,6 +434,8 @@ export class AdminDashboardComponent implements OnInit {
   experience = signal<{ range: string, count: number }[]>([]);
   recentRegistrations = signal<Registration[]>([]);
 
+  advancedStats = signal<any>(null);
+
   private maxSkillCount = 1;
   private maxExpCount = 1;
   private maxInstCount = 1;
@@ -379,6 +452,9 @@ export class AdminDashboardComponent implements OnInit {
     this.http.get<AdminStats>(`${environment.apiUrl}/analytics/admin`).subscribe({
       next: (data) => {
         this.recentRegistrations.set(data.recentRegistrations || []);
+        if (data.advanced) {
+          this.advancedStats.set(data.advanced);
+        }
       },
       error: (err) => console.error('Failed to load admin stats:', err)
     });
@@ -467,6 +543,21 @@ export class AdminDashboardComponent implements OnInit {
   getExpColorLight(index: number): string {
     const colors = ['#93c5fd', '#c4b5fd', '#f9a8d4', '#fcd34d', '#6ee7b7'];
     return colors[index % colors.length];
+  }
+
+  getInstHiresPercentage(hires: number): number {
+    const maxHires = Math.max(...(this.advancedStats()?.comparative?.institutions?.map((i: any) => i.hires) || [1]), 1);
+    return Math.round((hires / maxHires) * 100);
+  }
+
+  getJobTypePercentage(count: number): number {
+    const total = this.advancedStats()?.comparative?.jobTypes?.reduce((sum: number, jt: any) => sum + jt.count, 0) || 1;
+    return Math.round((count / total) * 100);
+  }
+
+  getUserGrowthHeight(count: number): number {
+    const max = Math.max(...(this.advancedStats()?.comparative?.userGrowth?.map((g: any) => g.count) || [1]), 1);
+    return Math.round((count / max) * 100);
   }
 
   getTotalSkillCount(): number {

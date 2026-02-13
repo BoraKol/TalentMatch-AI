@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-export interface IReferral {
+export interface IReferral extends mongoose.Document {
     candidate: mongoose.Types.ObjectId;
     job: mongoose.Types.ObjectId;
     referredBy: mongoose.Types.ObjectId; // super_admin user

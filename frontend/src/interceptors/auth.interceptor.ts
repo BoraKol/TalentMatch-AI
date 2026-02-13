@@ -1,21 +1,21 @@
-
-import { HttpInterceptorFn } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { AuthService } from '../services/auth.service';
+import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-    const authService = inject(AuthService);
-    const user = authService.currentUser();
-    const token = user?.token;
+    // Enable cookies for cross-origin requests
+    const cookieReq = req.clone({
+        withCredentials: true
+    });
 
-    if (token) {
-        const cloned = req.clone({
-            setHeaders: {
-                Authorization: `Bearer ${token}`
+    return next(cookieReq).pipe(
+        map(event => {
+            if (event instanceof HttpResponse) {
+                const body = event.body as any;
+                if (body && body.success === true && body.data !== undefined) {
+                    return event.clone({ body: body.data });
+                }
             }
-        });
-        return next(cloned);
-    }
-
-    return next(req);
+            return event;
+        })
+    );
 };

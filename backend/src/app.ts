@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import mongoSanitize from 'express-mongo-sanitize';
 import { config } from './config';
 import logger from './utils/logger';
 import apiRouter from './routes';
@@ -15,6 +17,8 @@ app.use(cors({
     origin: config.env === 'production' ? config.frontendUrl : true,
     credentials: true
 }));
+app.use(cookieParser());
+app.use(mongoSanitize());
 
 // Rate Limiting
 app.use('/api/', apiRateLimiter);
@@ -36,4 +40,3 @@ app.use('/api', apiRouter);
 app.use(errorHandler);
 
 export default app;
-

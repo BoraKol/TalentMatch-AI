@@ -6,8 +6,13 @@ import Candidate from '../models/candidate.model';
 import Institution, { IInstitution } from '../models/institution.model';
 import Employer from '../models/employer.model';
 import Application from '../models/application.model';
+import { BaseController } from './base.controller';
+import { analyticsService } from '../services/analytics.service';
 
-export class AnalyticsController {
+export class AnalyticsController extends BaseController {
+    constructor() {
+        super();
+    }
 
     // Institution Dashboard Stats
     async getInstitutionStats(req: AuthRequest, res: Response): Promise<void> {
@@ -16,7 +21,7 @@ export class AnalyticsController {
             const user = await User.findById(userId);
 
             if (!user?.institution) {
-                res.status(400).json({ error: 'No institution linked to this user' });
+                this.sendError(res, 'No institution linked to this user', 400);
                 return;
             }
 
@@ -35,7 +40,7 @@ export class AnalyticsController {
                 Institution.findById(institutionId)
             ]);
 
-            res.json({
+            this.sendSuccess(res, {
                 userCount,
                 maxUsers: institution?.maxUsers || 5,
                 jobCount,
@@ -47,7 +52,7 @@ export class AnalyticsController {
             });
         } catch (error: any) {
             console.error('Institution Stats Error:', error);
-            res.status(500).json({ error: error.message });
+            this.sendError(res, error.message);
         }
     }
 
@@ -69,7 +74,7 @@ export class AnalyticsController {
             // Get user's institution info
             const user = await User.findById(userId).populate<{ institution: IInstitution }>('institution');
 
-            res.json({
+            this.sendSuccess(res, {
                 activeJobs: jobs.filter(j => j.isActive).length,
                 totalJobs: jobs.length,
                 totalApplications,
@@ -80,7 +85,7 @@ export class AnalyticsController {
             });
         } catch (error: any) {
             console.error('Employer Stats Error:', error);
-            res.status(500).json({ error: error.message });
+            this.sendError(res, error.message);
         }
     }
 
@@ -94,7 +99,8 @@ export class AnalyticsController {
                 totalCandidates,
                 totalJobs,
                 totalApplications,
-                recentRegistrations
+                recentRegistrations,
+                advancedAnalytics
             ] = await Promise.all([
                 Institution.countDocuments(),
                 Institution.countDocuments({ status: 'active' }),
@@ -106,10 +112,11 @@ export class AnalyticsController {
                     .sort({ createdAt: -1 })
                     .limit(10)
                     .select('email firstName lastName role institution createdAt')
-                    .populate<{ institution: IInstitution }>('institution', 'name')
+                    .populate<{ institution: IInstitution }>('institution', 'name'),
+                analyticsService.getSuperAdminAnalytics()
             ]);
 
-            res.json({
+            this.sendSuccess(res, {
                 totalInstitutions,
                 activeInstitutions,
                 totalEmployers,
@@ -123,11 +130,12 @@ export class AnalyticsController {
                     role: u.role,
                     institutionName: u.institution?.name || null,
                     registeredAt: u.createdAt
-                }))
+                })),
+                advanced: advancedAnalytics
             });
         } catch (error: any) {
             console.error('Admin Stats Error:', error);
-            res.status(500).json({ error: error.message });
+            this.sendError(res, error.message);
         }
     }
 
@@ -138,9 +146,9 @@ export class AnalyticsController {
                 .select('name emailDomain institutionType')
                 .sort({ name: 1 });
 
-            res.json(institutions);
+            this.sendSuccess(res, institutions);
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            this.sendError(res, error.message);
         }
     }
 }

@@ -4,7 +4,7 @@ import { generateToken } from '../utils/jwt';
 import { userRepository, UserRepository } from '../repositories/user.repository';
 import { institutionRepository, InstitutionRepository } from '../repositories/institution.repository';
 import { userFactory, UserFactory } from './user-factory.service';
-import Invite from '../models/admin-invite.model'; // Still needed for setPassword lookup temporarily
+import Invite from '../models/admin-invite.model';
 import { config } from '../config';
 
 import {
@@ -77,7 +77,7 @@ export class AuthService {
             throw new Error('Email already exists');
         }
 
-        await this.factory.createUser({
+        const user = await this.factory.createUser({
             email,
             password,
             firstName,
@@ -86,7 +86,23 @@ export class AuthService {
             additionalData: profileData
         });
 
-        return { message: 'Candidate registered successfully' };
+        const token = generateToken({
+            id: user._id,
+            email: user.email,
+            role: user.role
+        });
+
+        return {
+            message: 'Candidate registered successfully',
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role
+            }
+        };
     }
 
     async registerEmployer(data: any) {
@@ -111,20 +127,34 @@ export class AuthService {
             throw new Error(`Institution has reached maximum user limit (${institution.maxUsers || 5})`);
         }
 
-        await this.factory.createUser({
+        const user = await this.factory.createUser({
             email,
             password,
             firstName,
             lastName,
             role: 'employer',
-            institutionId: institution._id as string,
+            institutionId: institution._id.toString(),
             additionalData: companyData
+        });
+
+        const token = generateToken({
+            id: user._id,
+            email: user.email,
+            role: user.role
         });
 
         return {
             message: 'Employer registered successfully',
-            institutionId: institution._id,
-            institutionName: institution.name
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                institutionId: institution._id,
+                companyName: institution.name
+            }
         };
     }
 
@@ -161,13 +191,13 @@ export class AuthService {
             status: 'pending'
         });
 
-        await this.factory.createUser({
+        const user = await this.factory.createUser({
             email,
             password,
             firstName,
             lastName,
             role: 'institution_admin',
-            institutionId: institution._id as string,
+            institutionId: institution._id.toString(),
             isActive: false
         });
 
@@ -182,7 +212,6 @@ export class AuthService {
         const validated = await SetPasswordSchema.parseAsync(data);
         const { email, password, inviteToken } = validated;
 
-        // Note: Keeping Invite model here temporarily for setPassword logic
         const invite = await Invite.findOne({
             email,
             token: inviteToken,
@@ -211,9 +240,24 @@ export class AuthService {
         invite.usedAt = new Date();
         await invite.save();
 
-        return { message: 'Password set successfully. You can now login.' };
+        const token = generateToken({
+            id: user._id,
+            email: user.email,
+            role: user.role
+        });
+
+        return {
+            message: 'Password set successfully',
+            token,
+            user: {
+                id: user._id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role
+            }
+        };
     }
 }
 
 export const authService = new AuthService();
-

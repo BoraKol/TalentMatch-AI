@@ -151,12 +151,13 @@ export class InviteService {
         }
     }
 
-    async getPendingInvites(type?: string) {
+    async getPendingInvites(type?: string, institutionId?: string) {
         const query: any = {
             expiresAt: { $gt: new Date() },
             usedAt: { $exists: false }
         };
         if (type) query.inviteType = type;
+        if (institutionId) query.institutionId = institutionId;
 
         return await this.inviteRepo.find(query);
     }
@@ -180,6 +181,7 @@ export class InviteService {
                 maxUsers: institution.maxUsers
             },
             currentCount: users.length,
+            userCount: users.length, // Added for frontend compatibility
             remainingSlots: Math.max(0, (institution.maxUsers || 5) - users.length),
             users: users.map(u => ({
                 id: u._id,

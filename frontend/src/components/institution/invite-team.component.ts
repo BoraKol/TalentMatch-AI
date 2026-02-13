@@ -7,10 +7,10 @@ import { AuthService } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
 
 @Component({
-    selector: 'app-invite-team',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule],
-    template: `
+  selector: 'app-invite-team',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
       <!-- Navbar -->
       <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
@@ -18,11 +18,7 @@ import { environment } from '../../environments/environment';
           <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
               <a routerLink="/institution/dashboard" class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                  </svg>
-                </div>
+<img src="/favicon.jpg" alt="TalentMatch AI" class="w-8 h-8 rounded-lg object-cover">
                 <span class="text-xl font-bold text-slate-800">TalentMatch AI</span>
                 <span class="ml-2 px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Institution</span>
               </a>
@@ -40,11 +36,7 @@ import { environment } from '../../environments/environment';
           <!-- Header -->
           <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-              </div>
+<img src="/favicon.jpg" alt="Invite Team" class="w-12 h-12 rounded-xl object-cover shadow-sm ring-2 ring-white/20">
               <div>
                 <h1 class="text-xl font-bold">Invite Team Member</h1>
                 <p class="text-indigo-100 text-sm">{{ remainingSlots() }} of 5 slots available</p>
@@ -135,79 +127,79 @@ import { environment } from '../../environments/environment';
   `
 })
 export class InviteTeamComponent implements OnInit {
-    private fb = inject(FormBuilder);
-    private http = inject(HttpClient);
-    private router = inject(Router);
-    private authService = inject(AuthService);
+  private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private authService = inject(AuthService);
 
-    isLoading = signal(false);
-    errorMessage = signal('');
-    successMessage = signal('');
-    remainingSlots = signal(4);
-    pendingInvites = signal<any[]>([]);
+  isLoading = signal(false);
+  errorMessage = signal('');
+  successMessage = signal('');
+  remainingSlots = signal(4);
+  pendingInvites = signal<any[]>([]);
 
-    inviteForm = this.fb.group({
-        email: ['', [Validators.required, Validators.email]],
-        role: ['institution_user', Validators.required],
-        message: ['']
+  inviteForm = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    role: ['institution_user', Validators.required],
+    message: ['']
+  });
+
+  ngOnInit() {
+    this.loadInstitutionStats();
+    this.loadPendingInvites();
+  }
+
+  loadInstitutionStats() {
+    // Get current user's institution user count
+    this.http.get<any>(`${environment.apiUrl}/admin/institution/users`).subscribe({
+      next: (res) => {
+        const currentUsers = res.userCount || 1;
+        this.remainingSlots.set(Math.max(0, 5 - currentUsers));
+      },
+      error: () => {
+        // Default to 4 slots if API fails
+        this.remainingSlots.set(4);
+      }
     });
+  }
 
-    ngOnInit() {
+  loadPendingInvites() {
+    this.http.get<any>(`${environment.apiUrl}/admin/invites?type=institution`).subscribe({
+      next: (res) => {
+        this.pendingInvites.set(res.invites || []);
+      },
+      error: () => {
+        this.pendingInvites.set([]);
+      }
+    });
+  }
+
+  onSubmit() {
+    if (this.inviteForm.invalid) return;
+
+    this.isLoading.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    const payload = {
+      email: this.inviteForm.value.email,
+      inviteType: this.inviteForm.value.role === 'institution_admin' ? 'institution' : 'institution',
+      role: this.inviteForm.value.role,
+      message: this.inviteForm.value.message
+    };
+
+    this.http.post(`${environment.apiUrl}/admin/invite`, payload).subscribe({
+      next: (res: any) => {
+        this.isLoading.set(false);
+        this.successMessage.set(`Invitation sent to ${this.inviteForm.value.email}`);
+        this.inviteForm.reset({ role: 'institution_user' });
         this.loadInstitutionStats();
         this.loadPendingInvites();
-    }
-
-    loadInstitutionStats() {
-        // Get current user's institution user count
-        this.http.get<any>(`${environment.apiUrl}/admin/institution/users`).subscribe({
-            next: (res) => {
-                const currentUsers = res.userCount || 1;
-                this.remainingSlots.set(Math.max(0, 5 - currentUsers));
-            },
-            error: () => {
-                // Default to 4 slots if API fails
-                this.remainingSlots.set(4);
-            }
-        });
-    }
-
-    loadPendingInvites() {
-        this.http.get<any>(`${environment.apiUrl}/admin/invites?type=institution`).subscribe({
-            next: (res) => {
-                this.pendingInvites.set(res.invites || []);
-            },
-            error: () => {
-                this.pendingInvites.set([]);
-            }
-        });
-    }
-
-    onSubmit() {
-        if (this.inviteForm.invalid) return;
-
-        this.isLoading.set(true);
-        this.errorMessage.set('');
-        this.successMessage.set('');
-
-        const payload = {
-            email: this.inviteForm.value.email,
-            inviteType: this.inviteForm.value.role === 'institution_admin' ? 'institution' : 'institution',
-            role: this.inviteForm.value.role,
-            message: this.inviteForm.value.message
-        };
-
-        this.http.post(`${environment.apiUrl}/admin/invite`, payload).subscribe({
-            next: (res: any) => {
-                this.isLoading.set(false);
-                this.successMessage.set(`Invitation sent to ${this.inviteForm.value.email}`);
-                this.inviteForm.reset({ role: 'institution_user' });
-                this.loadInstitutionStats();
-                this.loadPendingInvites();
-            },
-            error: (err) => {
-                this.isLoading.set(false);
-                this.errorMessage.set(err.error?.error || 'Failed to send invitation. Please try again.');
-            }
-        });
-    }
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(err.error?.error || 'Failed to send invitation. Please try again.');
+      }
+    });
+  }
 }
