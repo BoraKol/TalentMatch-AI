@@ -1,9 +1,10 @@
 
-import { comparePassword } from '../utils/password';
+import { comparePassword, hashPassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { userRepository, UserRepository } from '../repositories/user.repository';
 import { institutionRepository, InstitutionRepository } from '../repositories/institution.repository';
 import { userFactory, UserFactory } from './user-factory.service';
+import emailService from './email.service';
 import Invite from '../models/admin-invite.model';
 import { config } from '../config';
 
@@ -232,7 +233,6 @@ export class AuthService {
             throw error;
         }
 
-        const { hashPassword } = await import('../utils/password');
         user.password = await hashPassword(password);
         user.isActive = true;
         await user.save();
@@ -257,6 +257,61 @@ export class AuthService {
                 role: user.role
             }
         };
+    }
+
+    // Forgot Password: Generate code and send email
+    async forgotPassword(email: string) {
+        const user = await this.userRepo.findByEmail(email);
+        if (!user) {
+            // Return success even if not found to prevent enumeration
+            return;
+        }
+
+        // Generate 6 digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+        await this.userRepo.update(user._id.toString(), {
+            resetPasswordToken: code,
+            resetPasswordExpires: expires
+        });
+
+        // Send Email using existing EmailService
+        await emailService.sendContactEmail({
+            to: user.email,
+            candidateName: user.firstName || 'User',
+            companyName: 'TalentMatch AI',
+            jobTitle: 'Password Reset',
+            senderName: 'Support Team',
+            senderEmail: 'support@talentmatch.ai',
+            subject: 'Password Reset Verification Code',
+            message: `Your verification code is: ${code}\n\nThis code will expire in 15 minutes. If you did not request this, please ignore this email.`
+        });
+    }
+
+    // Reset Password: Validate code and set new password
+    async resetPassword(data: any) {
+        const { email, code, newPassword } = data;
+
+        const user = await this.userRepo.findByEmail(email);
+
+        if (!user ||
+            user.resetPasswordToken !== code ||
+            !user.resetPasswordExpires ||
+            user.resetPasswordExpires < new Date()) {
+            throw new Error('Invalid or expired verification code');
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+
+        // Clear reset fields and update password
+        await this.userRepo.update(user._id.toString(), {
+            password: hashedPassword,
+            resetPasswordToken: undefined,
+            resetPasswordExpires: undefined
+        });
+
+        return { message: 'Password reset successfully' };
     }
 }
 

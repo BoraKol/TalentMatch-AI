@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import Candidate from '../models/candidate.model';
 import Job from '../models/job.model';
 import User from '../models/user.model'; // Need a user to assign candidates to
+import { hashPassword } from '../utils/password';
 
 dotenv.config();
 
@@ -89,13 +90,42 @@ const seedDB = async () => {
         // Check if a user exists
         let user = await User.findOne({ email: 'demo@talentmatch.ai' });
         if (!user) {
+            const hashedPassword = await hashPassword('password123');
             user = await User.create({
-                name: 'Demo Recruiter',
+                firstName: 'Demo',
+                lastName: 'Recruiter',
                 email: 'demo@talentmatch.ai',
-                password: 'password123',
-                role: 'recruiter'
+                password: hashedPassword,
+                role: 'employer'
             });
-            console.log('Created Demo User');
+            console.log('Created Demo Employer');
+        }
+
+        // Create Super Admin
+        const superAdminEmail = 'admin@talentmatch.ai';
+        let superAdmin = await User.findOne({ email: superAdminEmail });
+
+        // Always ensure super admin exists and has correct password for dev
+        if (!superAdmin) {
+            const hashedAdminPassword = await hashPassword('adminpassword123');
+            await User.create({
+                firstName: 'Super',
+                lastName: 'Admin',
+                email: superAdminEmail,
+                password: hashedAdminPassword,
+                role: 'super_admin'
+            });
+            console.log('Created Super Admin (admin@talentmatch.ai / adminpassword123)');
+        } else {
+            // Optional: Reset password if it exists but is wrong (for dev convenience)
+            // For now, assume if it exists, it's correct or managed elsewhere.
+            // But since we had a bug, let's force update it if it was created with plain text?
+            // Hard to detect plain text vs hash easily without error.
+            // Let's just update it to be safe since this is a seed script.
+            const hashedAdminPassword = await hashPassword('adminpassword123');
+            superAdmin.password = hashedAdminPassword;
+            await superAdmin.save();
+            console.log('Updated Super Admin Password');
         }
 
         // Clear existing candidates and jobs

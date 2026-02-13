@@ -28,7 +28,7 @@ const InviteSchema: Schema = new Schema({
 }, { timestamps: true });
 
 // Indexes
-InviteSchema.index({ token: 1 });
+// InviteSchema.index({ token: 1 }); // Removed to prevent duplicate index warning
 InviteSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 InviteSchema.index({ email: 1, inviteType: 1 });
 

@@ -3,6 +3,8 @@ import { jobRepository } from '../repositories/job.repository';
 import { candidateRepository } from '../repositories/candidate.repository';
 import { applicationRepository } from '../repositories/application.repository';
 import { savedJobRepository } from '../repositories/saved-job.repository';
+import { IJob } from '../models/job.model';
+import { IApplication } from '../models/application.model';
 
 export class JobDiscoveryService {
 
@@ -92,8 +94,8 @@ export class JobDiscoveryService {
 
         // Filter by minimum score
         const filtered = scoredJobs
-            .filter(j => j.matchScore >= minScore)
-            .sort((a, b) => b.matchScore - a.matchScore);
+            .filter((j: any) => j.matchScore >= minScore)
+            .sort((a: any, b: any) => b.matchScore - a.matchScore);
 
         // Pagination
         const total = filtered.length;
@@ -104,7 +106,7 @@ export class JobDiscoveryService {
             jobs: paginated,
             pagination: { page, limit, total, totalPages },
             candidateSkills: Array.from(candidateSkills),
-            hiddenGemCount: filtered.filter(j => j.isHiddenGem).length
+            hiddenGemCount: filtered.filter((j: any) => j.isHiddenGem).length
         };
     }
 

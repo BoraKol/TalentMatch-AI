@@ -1,3 +1,4 @@
+
 import { Routes } from '@angular/router';
 import { LoginComponent } from './components/auth/login.component';
 import { RegisterCandidateComponent } from './components/auth/register-candidate.component';
@@ -15,6 +16,17 @@ export class AppRoutes {
     static routes: Routes = [
         { path: '', redirectTo: 'login', pathMatch: 'full' },
         { path: 'login', component: LoginComponent },
+
+        // Auth Routes
+        {
+            path: 'forgot-password',
+            loadComponent: () => import('./components/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
+        },
+        {
+            path: 'reset-password',
+            loadComponent: () => import('./components/auth/reset-password.component').then(m => m.ResetPasswordComponent)
+        },
+
         { path: 'register/candidate', component: RegisterCandidateComponent },
         { path: 'register/employer', component: RegisterEmployerComponent },
         { path: 'register/institution', component: RegisterInstitutionComponent },

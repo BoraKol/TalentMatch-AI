@@ -10,7 +10,29 @@ import { LoginHeroComponent } from './login-hero.component';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule, LoginHeroComponent],
   template: `
-    <div class="min-h-screen bg-white flex flex-col md:flex-row">
+    <div class="min-h-screen bg-white flex flex-col md:flex-row relative">
+      
+      <!-- Validation Modal -->
+      <div *ngIf="showValidationModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm transition-all" (click)="closeValidationModal()">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all scale-100" (click)="$event.stopPropagation()">
+          <div class="p-6 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Required Fields Missing</h3>
+            <p class="text-sm text-slate-600 mb-6">
+              Please fill in both <strong>Email</strong> and <strong>Password</strong> fields to continue.
+            </p>
+            <button (click)="closeValidationModal()" 
+              class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+              Okay, I understand
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Right Side (Hero) - Shows on top on mobile -->
       <div class="w-full md:w-1/2 min-h-[450px] md:h-auto order-1 md:order-2 bg-slate-900 relative">
         <app-login-hero></app-login-hero>
@@ -66,7 +88,7 @@ import { LoginHeroComponent } from './login-hero.component';
 
             <div class="flex items-center justify-between">
               <div class="text-sm">
-                <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</a>
+                <a routerLink="/forgot-password" class="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</a>
               </div>
             </div>
 
@@ -124,12 +146,24 @@ export class LoginComponent {
   isLoading = signal(false);
   errorMessage = signal('');
   showPassword = signal(false);
+  showValidationModal = signal(false);
 
   togglePasswordVisibility() {
     this.showPassword.update(value => !value);
   }
 
+  closeValidationModal() {
+    this.showValidationModal.set(false);
+  }
+
   onSubmit() {
+    // Check validation first
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      this.showValidationModal.set(true);
+      return;
+    }
+
     if (this.loginForm.valid) {
       this.isLoading.set(true);
       this.errorMessage.set('');

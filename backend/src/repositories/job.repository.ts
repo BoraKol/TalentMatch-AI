@@ -7,7 +7,14 @@ export class JobRepository extends BaseRepository<IJob> {
     }
 
     async findActive() {
-        return await Job.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+        return await this.model.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+    }
+
+    async findActiveWithFilters(filters: any) {
+        const query: any = { isActive: true };
+        if (filters.location) query.location = { $regex: filters.location, $options: 'i' };
+        if (filters.type) query.employmentType = filters.type;
+        return await this.model.find(query).sort({ createdAt: -1 }).lean();
     }
 
     async getTopEmployers() {

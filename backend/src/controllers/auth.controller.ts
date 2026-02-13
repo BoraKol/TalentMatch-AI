@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import { authService, AuthService } from '../services/auth.service';
 import { BaseController } from './base.controller';
@@ -93,7 +94,28 @@ export class AuthController extends BaseController {
         res.clearCookie('token');
         this.sendSuccess(res, null, 'Logged out successfully');
     }
+
+    // Forgot Password (Request Code)
+    async forgotPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const { email } = req.body;
+            await this.authService.forgotPassword(email);
+            // Always return success
+            this.sendSuccess(res, null, 'If an account exists, a verification code has been sent.');
+        } catch (error: any) {
+            this.sendError(res, error.message);
+        }
+    }
+
+    // Reset Password (Verify Code & Set New)
+    async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const result = await this.authService.resetPassword(req.body);
+            this.sendSuccess(res, null, result.message);
+        } catch (error: any) {
+            this.sendError(res, error.message);
+        }
+    }
 }
 
 export const authController = new AuthController();
-

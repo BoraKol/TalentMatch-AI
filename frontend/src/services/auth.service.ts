@@ -46,6 +46,14 @@ export class AuthService {
         );
     }
 
+    forgotPassword(email: string) {
+        return this.http.post<any>(`${this.apiUrl}/forgot-password`, { email });
+    }
+
+    resetPassword(data: any) {
+        return this.http.post<any>(`${this.apiUrl}/reset-password`, data);
+    }
+
     logout() {
         this.http.post(`${this.apiUrl}/logout`, {}).subscribe({
             next: () => {

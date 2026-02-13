@@ -11,6 +11,8 @@ export interface IUser extends Document {
     role: UserRole;
     institution?: mongoose.Types.ObjectId; // Links to Institution for org users
     invitedBy?: mongoose.Types.ObjectId; // Tracks who invited this user
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -27,7 +29,9 @@ const UserSchema: Schema = new Schema({
         default: 'candidate'
     },
     institution: { type: Schema.Types.ObjectId, ref: 'Institution' },
-    invitedBy: { type: Schema.Types.ObjectId, ref: 'User' }
+    invitedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date }
 }, { timestamps: true });
 
 // Index for faster institution user lookups

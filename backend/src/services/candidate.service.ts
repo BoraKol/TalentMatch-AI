@@ -9,7 +9,7 @@ export class CandidateService extends BaseService<ICandidate> {
     }
 
     async updateProfile(candidateId: string, updates: any) {
-        const candidate = await candidateRepository.findById(candidateId);
+        const candidate = await candidateRepository.findOne(candidateId);
         if (!candidate) {
             throw new Error('Candidate not found');
         }
