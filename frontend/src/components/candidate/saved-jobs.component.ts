@@ -3,32 +3,33 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { ApplicationService } from '../../services/application.service';
 import { environment } from '../../environments/environment';
 
 interface SavedJobItem {
+  _id: string;
+  job: {
     _id: string;
-    job: {
-        _id: string;
-        title: string;
-        company: string;
-        location: string;
-        employmentType: string;
-        salaryRange?: string;
-        requiredSkills: string[];
-        preferredSkills: string[];
-        experienceRequired: number;
-        description: string;
-        isActive: boolean;
-        createdAt: string;
-    };
-    savedAt: string;
+    title: string;
+    company: string;
+    location: string;
+    employmentType: string;
+    salaryRange?: string;
+    requiredSkills: string[];
+    preferredSkills: string[];
+    experienceRequired: number;
+    description: string;
+    isActive: boolean;
+    createdAt: string;
+  };
+  savedAt: string;
 }
 
 @Component({
-    selector: 'app-saved-jobs',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-saved-jobs',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <!-- Header -->
       <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -135,68 +136,69 @@ interface SavedJobItem {
   `
 })
 export class SavedJobsComponent implements OnInit {
-    private http = inject(HttpClient);
-    private authService = inject(AuthService);
-    private router = inject(Router);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
+  private applicationService = inject(ApplicationService);
+  private router = inject(Router);
 
-    isLoading = signal(true);
-    savedJobs = signal<SavedJobItem[]>([]);
-    applyingJobs = signal<Set<string>>(new Set());
+  isLoading = signal(true);
+  savedJobs = signal<SavedJobItem[]>([]);
+  applyingJobs = signal<Set<string>>(new Set());
 
-    ngOnInit() {
-        this.loadSavedJobs();
-    }
+  ngOnInit() {
+    this.loadSavedJobs();
+  }
 
-    loadSavedJobs() {
-        this.isLoading.set(true);
-        this.http.get<SavedJobItem[]>(`${environment.apiUrl}/saved-jobs`).subscribe({
-            next: (data) => {
-                this.savedJobs.set(data);
-                this.isLoading.set(false);
-            },
-            error: () => {
-                this.savedJobs.set([]);
-                this.isLoading.set(false);
-            }
-        });
-    }
+  loadSavedJobs() {
+    this.isLoading.set(true);
+    this.http.get<SavedJobItem[]>(`${environment.apiUrl}/saved-jobs`).subscribe({
+      next: (data) => {
+        this.savedJobs.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.savedJobs.set([]);
+        this.isLoading.set(false);
+      }
+    });
+  }
 
-    removeSaved(item: SavedJobItem) {
-        this.http.delete(`${environment.apiUrl}/saved-jobs/${item.job._id}`).subscribe({
-            next: () => {
-                this.savedJobs.update(jobs => jobs.filter(j => j._id !== item._id));
-            }
-        });
-    }
+  removeSaved(item: SavedJobItem) {
+    this.http.delete(`${environment.apiUrl}/saved-jobs/${item.job._id}`).subscribe({
+      next: () => {
+        this.savedJobs.update(jobs => jobs.filter(j => j._id !== item._id));
+      }
+    });
+  }
 
-    applyToJob(item: SavedJobItem) {
-        const jobId = item.job._id;
-        if (this.applyingJobs().has(jobId)) return;
+  applyToJob(item: SavedJobItem) {
+    const jobId = item.job._id;
+    if (this.applyingJobs().has(jobId)) return;
 
-        this.applyingJobs.update(set => { const s = new Set(set); s.add(jobId); return s; });
+    this.applyingJobs.update(set => { const s = new Set(set); s.add(jobId); return s; });
 
-        this.http.post(`${environment.apiUrl}/applications/apply`, { jobId }).subscribe({
-            next: () => {
-                alert(`Applied to ${item.job.title}!`);
-                this.applyingJobs.update(set => { const s = new Set(set); s.delete(jobId); return s; });
-            },
-            error: (err) => {
-                alert(err.error?.error || 'Failed to apply');
-                this.applyingJobs.update(set => { const s = new Set(set); s.delete(jobId); return s; });
-            }
-        });
-    }
+    this.applicationService.applyForJob(jobId).subscribe({
+      next: () => {
+        alert(`Applied to ${item.job.title}!`);
+        this.applyingJobs.update(set => { const s = new Set(set); s.delete(jobId); return s; });
+      },
+      error: (err) => {
+        alert(err.error?.error || 'Failed to apply');
+        this.applyingJobs.update(set => { const s = new Set(set); s.delete(jobId); return s; });
+      }
+    });
+  }
 
-    getTimeAgo(dateStr: string): string {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const days = Math.floor(diff / 86400000);
-        if (days === 0) return 'today';
-        if (days === 1) return 'yesterday';
-        if (days < 7) return `${days} days ago`;
-        return `${Math.floor(days / 7)} weeks ago`;
-    }
+  getTimeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return `${days} days ago`;
+    return `${Math.floor(days / 7)} weeks ago`;
+  }
 
-    goBack() { this.router.navigate(['/candidate/dashboard']); }
-    goToDiscover() { this.router.navigate(['/candidate/jobs']); }
-    logout() { this.authService.logout(); }
+  goBack() { this.router.navigate(['/candidate/dashboard']); }
+  goToDiscover() { this.router.navigate(['/candidate/jobs']); }
+  logout() { this.authService.logout(); }
 }

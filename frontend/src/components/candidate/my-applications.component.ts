@@ -3,30 +3,16 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { ApplicationService } from '../../services/application.service';
+import { Application } from '../../models/application.model';
 import { environment } from '../../environments/environment';
 
-interface ApplicationItem {
-    _id: string;
-    job: {
-        _id: string;
-        title: string;
-        company: string;
-        location: string;
-        employmentType: string;
-        salaryRange?: string;
-        requiredSkills?: string[];
-        isActive: boolean;
-    };
-    status: 'applied' | 'reviewing' | 'interviewing' | 'rejected' | 'hired';
-    aiMatchScore: number;
-    createdAt: string;
-}
 
 @Component({
-    selector: 'app-my-applications',
-    standalone: true,
-    imports: [CommonModule, RouterModule],
-    template: `
+  selector: 'app-my-applications',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <!-- Header -->
       <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -150,80 +136,80 @@ interface ApplicationItem {
   `
 })
 export class MyApplicationsComponent implements OnInit {
-    private http = inject(HttpClient);
-    private authService = inject(AuthService);
-    private router = inject(Router);
+  private applicationService = inject(ApplicationService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-    isLoading = signal(true);
-    applications = signal<ApplicationItem[]>([]);
+  isLoading = signal(true);
+  applications = signal<Application[]>([]);
 
-    statusSteps = ['Applied', 'Reviewing', 'Interviewing', 'Hired'];
+  statusSteps = ['Applied', 'Reviewing', 'Interviewing', 'Hired'];
 
-    ngOnInit() {
-        this.loadApplications();
-    }
+  ngOnInit() {
+    this.loadApplications();
+  }
 
-    loadApplications() {
-        this.isLoading.set(true);
-        this.http.get<ApplicationItem[]>(`${environment.apiUrl}/applications/my-applications`).subscribe({
-            next: (data) => {
-                this.applications.set(data);
-                this.isLoading.set(false);
-            },
-            error: () => {
-                this.applications.set([]);
-                this.isLoading.set(false);
-            }
-        });
-    }
+  loadApplications() {
+    this.isLoading.set(true);
+    this.applicationService.getMyApplications().subscribe({
+      next: (data) => {
+        this.applications.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.applications.set([]);
+        this.isLoading.set(false);
+      }
+    });
+  }
 
-    getStatusCount(status: string): number {
-        return this.applications().filter(a => a.status === status).length;
-    }
+  getStatusCount(status: string): number {
+    return this.applications().filter(a => a.status === status).length;
+  }
 
-    getStatusPercent(status: string): number {
-        const total = this.applications().length;
-        return total === 0 ? 0 : (this.getStatusCount(status) / total) * 100;
-    }
+  getStatusPercent(status: string): number {
+    const total = this.applications().length;
+    return total === 0 ? 0 : (this.getStatusCount(status) / total) * 100;
+  }
 
-    getStatusClass(status: string): string {
-        const map: Record<string, string> = {
-            'applied': 'bg-blue-100 text-blue-700 border border-blue-200',
-            'reviewing': 'bg-amber-100 text-amber-700 border border-amber-200',
-            'interviewing': 'bg-violet-100 text-violet-700 border border-violet-200',
-            'hired': 'bg-emerald-100 text-emerald-700 border border-emerald-200',
-            'rejected': 'bg-red-100 text-red-600 border border-red-200'
-        };
-        return map[status] || 'bg-slate-100 text-slate-600';
-    }
+  getStatusClass(status: string): string {
+    const map: Record<string, string> = {
+      'applied': 'bg-blue-100 text-blue-700 border border-blue-200',
+      'reviewing': 'bg-amber-100 text-amber-700 border border-amber-200',
+      'interviewing': 'bg-violet-100 text-violet-700 border border-violet-200',
+      'hired': 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      'rejected': 'bg-red-100 text-red-600 border border-red-200'
+    };
+    return map[status] || 'bg-slate-100 text-slate-600';
+  }
 
-    getStatusIcon(status: string): string {
-        const map: Record<string, string> = {
-            'applied': '📤',
-            'reviewing': '👀',
-            'interviewing': '🎤',
-            'hired': '🎉',
-            'rejected': '❌'
-        };
-        return map[status] || '📋';
-    }
+  getStatusIcon(status: string): string {
+    const map: Record<string, string> = {
+      'applied': '📤',
+      'reviewing': '👀',
+      'interviewing': '🎤',
+      'hired': '🎉',
+      'rejected': '❌'
+    };
+    return map[status] || '📋';
+  }
 
-    getStepIndex(status: string): number {
-        const order = ['applied', 'reviewing', 'interviewing', 'hired'];
-        return order.indexOf(status);
-    }
+  getStepIndex(status: string): number {
+    const order = ['applied', 'reviewing', 'interviewing', 'hired'];
+    return order.indexOf(status);
+  }
 
-    getTimeAgo(dateStr: string): string {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const days = Math.floor(diff / 86400000);
-        if (days === 0) return 'today';
-        if (days === 1) return 'yesterday';
-        if (days < 7) return `${days} days ago`;
-        if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-        return `${Math.floor(days / 30)} months ago`;
-    }
+  getTimeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+    return `${Math.floor(days / 30)} months ago`;
+  }
 
-    goBack() { this.router.navigate(['/candidate/dashboard']); }
-    goToDiscover() { this.router.navigate(['/candidate/jobs']); }
-    logout() { this.authService.logout(); }
+  goBack() { this.router.navigate(['/candidate/dashboard']); }
+  goToDiscover() { this.router.navigate(['/candidate/jobs']); }
+  logout() { this.authService.logout(); }
 }
