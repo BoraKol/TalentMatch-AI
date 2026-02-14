@@ -61,8 +61,6 @@ export class DataService {
     } catch (e) {
       console.error('Failed to load candidates', e);
     }
-  } catch(e) {
-    console.error('Failed to load candidates', e);
   }
 }
 

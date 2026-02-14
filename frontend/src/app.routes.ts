@@ -7,11 +7,6 @@ import { RegisterInstitutionComponent } from './components/auth/register-institu
 import { AdminLayoutComponent } from './components/admin/admin-layout.component';
 import { superAdminGuard, candidateGuard, employerGuard, institutionGuard } from './guards/auth.guard';
 
-import { ADMIN_ROUTES } from './routes/admin.routes';
-import { INSTITUTION_ROUTES } from './routes/institution.routes';
-import { EMPLOYER_ROUTES } from './routes/employer.routes';
-import { CANDIDATE_ROUTES } from './routes/candidate.routes';
-
 export class AppRoutes {
     static routes: Routes = [
         { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -41,23 +36,23 @@ export class AppRoutes {
         {
             path: 'candidate',
             canActivate: [candidateGuard],
-            children: CANDIDATE_ROUTES
+            loadChildren: () => import('./routes/candidate.routes').then(m => m.CANDIDATE_ROUTES)
         },
         {
             path: 'employer',
             canActivate: [employerGuard],
-            children: EMPLOYER_ROUTES
+            loadChildren: () => import('./routes/employer.routes').then(m => m.EMPLOYER_ROUTES)
         },
         {
             path: 'institution',
             canActivate: [institutionGuard],
-            children: INSTITUTION_ROUTES
+            loadChildren: () => import('./routes/institution.routes').then(m => m.INSTITUTION_ROUTES)
         },
         {
             path: 'admin',
             component: AdminLayoutComponent,
             canActivate: [superAdminGuard],
-            children: ADMIN_ROUTES
+            loadChildren: () => import('./routes/admin.routes').then(m => m.ADMIN_ROUTES)
         },
 
         // Redirects
