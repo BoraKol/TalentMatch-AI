@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { JobService } from '../../services/job.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -187,7 +188,7 @@ import { environment } from '../../environments/environment';
 })
 export class JobPostComponent {
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
+  private jobService = inject(JobService);
   private router = inject(Router);
   private authService = inject(AuthService);
 
@@ -331,7 +332,7 @@ export class JobPostComponent {
         requirements: this.primarySkills() // backwards compatibility
       };
 
-      this.http.post<any>(`${environment.apiUrl}/jobs`, jobData).subscribe({
+      this.jobService.createJob(jobData).subscribe({
         next: (response) => {
           this.router.navigate(['/employer/jobs', response._id, 'matches']);
         },

@@ -1,6 +1,7 @@
 import { Injectable, signal, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ApiService, Candidate } from './api.service';
+import { JobService } from './job.service';
 export type { Candidate }; // Re-export for consumers
 import { firstValueFrom } from 'rxjs';
 
@@ -20,8 +21,12 @@ export interface Job {
   providedIn: 'root'
 })
 export class DataService {
-  constructor(private apiService: ApiService) {
+  constructor(
+    private apiService: ApiService,
+    private jobService: JobService
+  ) {
     this.loadCandidates();
+    this.loadJobs();
   }
 
   inviteCandidate(candidate: Candidate, jobTitle: string) {
@@ -53,19 +58,40 @@ export class DataService {
     } catch (e) {
       console.error('Failed to load candidates', e);
     }
+  } catch(e) {
+    console.error('Failed to load candidates', e);
   }
-  // Configurable Algorithm Settings (from the text)
-  algorithmSettings = signal({
-    primarySkillPoints: 10,
-    secondarySkillPoints: 5,
-    softSkillPoints: 3,
-    niceToHavePoints: 2
-  });
+}
 
-  candidates: Candidate[] = [];
-  jobs: Job[] = [];
-
-  updateSettings(newSettings: any) {
-    this.algorithmSettings.set(newSettings);
+  async loadJobs() {
+  try {
+    const data = await firstValueFrom(this.jobService.getAllJobs());
+    this.jobs = (data as any[]).map(j => ({
+      id: j._id || j.id,
+      title: j.title,
+      type: j.employmentType || 'Full-time',
+      department: j.company, // Mapping company to department for display if needed
+      description: j.description,
+      primarySkills: j.primarySkills || [],
+      secondarySkills: j.secondarySkills || []
+    }));
+    console.log('Jobs loaded:', this.jobs);
+  } catch (e) {
+    console.error('Failed to load jobs', e);
   }
+}
+// Configurable Algorithm Settings (from the text)
+algorithmSettings = signal({
+  primarySkillPoints: 10,
+  secondarySkillPoints: 5,
+  softSkillPoints: 3,
+  niceToHavePoints: 2
+});
+
+candidates: Candidate[] = [];
+jobs: Job[] = [];
+
+updateSettings(newSettings: any) {
+  this.algorithmSettings.set(newSettings);
+}
 }
