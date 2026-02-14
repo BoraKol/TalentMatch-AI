@@ -1,9 +1,10 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
+import { EmptyStateComponent } from '../shared/empty-state.component';
 
 interface Candidate {
   _id: string;
@@ -28,7 +29,7 @@ interface Job {
 @Component({
   selector: 'app-employer-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, EmptyStateComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
       <!-- Header -->
@@ -164,15 +165,17 @@ interface Job {
                 </div>
 
                 <!-- Empty State Post Button -->
-                <div *ngIf="jobs().length === 0" class="col-span-full text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
-                  <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                  </div>
-                  <h3 class="text-lg font-medium text-slate-900">No active jobs</h3>
-                  <p class="text-slate-500 mt-1 mb-6">Get started by posting your first job opening.</p>
-                  <button routerLink="/employer/jobs/new" class="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors">
-                    Post a Job
-                  </button>
+                <div *ngIf="jobs().length === 0" class="col-span-full">
+                  <app-empty-state
+                    title="No active jobs"
+                    message="Get started by posting your first job opening to find candidates."
+                    actionLabel="Post a Job"
+                    (action)="navigateTo('/employer/jobs/new')"
+                    variant="default">
+                    <div icon class="text-emerald-600">
+                      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    </div>
+                  </app-empty-state>
                 </div>
               </div>
             </div>
@@ -185,6 +188,7 @@ interface Job {
 export class EmployerDashboardComponent implements OnInit {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   user = this.authService.currentUser;
   isLoading = signal(true);
@@ -242,5 +246,12 @@ export class EmployerDashboardComponent implements OnInit {
 
   logout() {
     this.authService.logout();
+  }
+
+  navigateTo(path: string) {
+    // We can inject Router or use routerLink in the component template if needed, 
+    // but since EmptyState emits an event, we need a method or use routerLink in the parent.
+    // Wait, I can inject Router here.
+    this.router.navigate([path]);
   }
 }

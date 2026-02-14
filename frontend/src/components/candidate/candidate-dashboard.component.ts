@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../environments/environment';
+import { EmptyStateComponent } from '../shared/empty-state.component';
 
 interface JobMatch {
   id: string;
@@ -47,35 +48,9 @@ interface SkillGapResponse {
 @Component({
   selector: 'app-candidate-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, EmptyStateComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <!-- Header -->
-      <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
-            <div class="flex items-center gap-3">
-              <img src="/favicon.jpg" alt="TalentMatch Logo" class="w-10 h-10 rounded-xl object-cover shadow-sm">
-              <span class="font-bold text-xl text-slate-800">TalentMatch AI</span>
-              <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">Candidate</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <div class="hidden md:flex flex-col items-end mr-2">
-                <span class="text-sm font-semibold text-slate-700">{{ user()?.firstName }} {{ user()?.lastName }}</span>
-                <span class="text-xs text-slate-500">{{ user()?.email }}</span>
-              </div>
-              <button (click)="logout()" 
-                      class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Banner -->
         <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl p-8 mb-8 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden">
@@ -102,21 +77,7 @@ interface SkillGapResponse {
           </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="flex flex-wrap gap-3 mb-8">
-          <button (click)="navigateTo('/candidate/jobs')" 
-                  class="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 hover:from-amber-600 hover:to-orange-700 transition-all transform hover:-translate-y-0.5">
-            🔓 Referred Positions
-          </button>
-          <button (click)="navigateTo('/candidate/applications')" 
-                  class="flex items-center gap-2 px-5 py-3 bg-white text-slate-700 rounded-xl font-semibold border border-slate-200 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 transition-all shadow-sm">
-            📋 Referral Status
-          </button>
-          <button (click)="navigateTo('/candidate/saved')" 
-                  class="flex items-center gap-2 px-5 py-3 bg-white text-slate-700 rounded-xl font-semibold border border-slate-200 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700 transition-all shadow-sm">
-            🔖 Saved Jobs
-          </button>
-        </div>
+        <!-- Navigation Tabs (Removed as they are now in Layout) -->
 
         <!-- Stats Row -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -218,11 +179,15 @@ interface SkillGapResponse {
               </div>
 
               <!-- Empty State -->
-              <div *ngIf="jobMatches().length === 0" class="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                <div class="text-3xl mb-3">🔓</div>
-                <h3 class="font-semibold text-slate-700 mb-1">No referral matches yet</h3>
-                <p class="text-slate-500 text-sm">Your referral specialist is working on finding the best opportunities for you. Complete your profile to help them.</p>
-              </div>
+              <app-empty-state
+                *ngIf="jobMatches().length === 0"
+                title="No referral matches yet"
+                message="Your referral specialist is working on finding the best opportunities for you. Complete your profile to help them match you better."
+                iconEmoji="🔓"
+                actionLabel="Complete Profile"
+                (action)="editProfile()"
+                [variant]="'default'">
+              </app-empty-state>
             </div>
           </div>
 
@@ -265,10 +230,15 @@ interface SkillGapResponse {
               </div>
 
               <!-- Empty State -->
-              <div *ngIf="skillGaps().length === 0 && !isLoadingGaps()" class="text-center py-8">
-                <div class="text-2xl mb-2">🎯</div>
-                <p class="text-sm text-slate-500">Add skills to your profile to see gap analysis.</p>
-              </div>
+              <app-empty-state
+                *ngIf="skillGaps().length === 0 && !isLoadingGaps()"
+                title="Skills Analysis"
+                message="Add skills to your profile to see gap analysis and unlock more jobs."
+                iconEmoji="🎯"
+                actionLabel="Add Skills"
+                (action)="editProfile()"
+                [variant]="'default'">
+              </app-empty-state>
             </div>
           </div>
         </div>

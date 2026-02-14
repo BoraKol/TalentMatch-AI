@@ -20,23 +20,6 @@ interface SavedJobItem {
   imports: [CommonModule, RouterModule],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <!-- Header -->
-      <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">TM</div>
-              <span class="font-bold text-xl text-slate-800">TalentMatch AI</span>
-              <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded">Saved Jobs</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <button (click)="goBack()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">← Dashboard</button>
-              <button (click)="logout()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">Sign Out</button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Title -->
         <div class="flex items-center justify-between mb-6">
