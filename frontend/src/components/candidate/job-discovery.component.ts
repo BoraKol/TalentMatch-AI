@@ -4,26 +4,8 @@ import { RouterModule, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
-interface ReferralPosition {
-  _id: string;
-  job: {
-    _id: string;
-    title: string;
-    company: string;
-    location: string;
-    employmentType: string;
-    salaryRange: { min: number; max: number; currency: string };
-    description: string;
-    requiredSkills: string[];
-    preferredSkills: string[];
-    experienceRequired: number;
-  };
-  status: string;
-  aiMatchScore: number;
-  aiAnalysis: string;
-  referredAt: string;
-  candidateResponse: string;
-}
+import { ReferralService } from '../../services/referral.service';
+import { ReferralPosition } from '../../models/referral.model';
 
 @Component({
   selector: 'app-job-discovery',
@@ -164,7 +146,7 @@ interface ReferralPosition {
   `
 })
 export class JobDiscoveryComponent implements OnInit {
-  private http = inject(HttpClient);
+  private referralService = inject(ReferralService);
   private router = inject(Router);
 
   positions = signal<ReferralPosition[]>([]);
@@ -186,7 +168,7 @@ export class JobDiscoveryComponent implements OnInit {
 
   loadReferrals() {
     this.isLoading.set(true);
-    this.http.get<ReferralPosition[]>(`${environment.apiUrl}/referrals/my`).subscribe({
+    this.referralService.getMyReferrals().subscribe({
       next: (data) => {
         this.positions.set(data);
         this.isLoading.set(false);
@@ -216,7 +198,7 @@ export class JobDiscoveryComponent implements OnInit {
   respond(pos: ReferralPosition, action: 'accepted' | 'declined') {
     this.responding.update(s => { const ns = new Set(s); ns.add(pos._id); return ns; });
 
-    this.http.patch(`${environment.apiUrl}/referrals/${pos._id}/respond`, { action }).subscribe({
+    this.referralService.respondToReferral(pos._id, action).subscribe({
       next: () => {
         this.positions.update(list =>
           list.map(p => p._id === pos._id ? { ...p, status: action } : p)

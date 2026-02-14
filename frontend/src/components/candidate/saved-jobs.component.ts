@@ -6,22 +6,11 @@ import { AuthService } from '../../services/auth.service';
 import { ApplicationService } from '../../services/application.service';
 import { environment } from '../../environments/environment';
 
+import { Job } from '../../models/job.model';
+
 interface SavedJobItem {
   _id: string;
-  job: {
-    _id: string;
-    title: string;
-    company: string;
-    location: string;
-    employmentType: string;
-    salaryRange?: string;
-    requiredSkills: string[];
-    preferredSkills: string[];
-    experienceRequired: number;
-    description: string;
-    isActive: boolean;
-    createdAt: string;
-  };
+  job: Job;
   savedAt: string;
 }
 
