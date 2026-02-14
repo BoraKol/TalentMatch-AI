@@ -1,7 +1,9 @@
 import { Injectable, signal, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { ApiService, Candidate } from './api.service';
+import { ApiService } from './api.service';
+import { Candidate } from '../models/candidate.model';
 import { JobService } from './job.service';
+import { CandidateService } from './candidate.service';
 export type { Candidate }; // Re-export for consumers
 import { firstValueFrom } from 'rxjs';
 
@@ -23,7 +25,8 @@ export interface Job {
 export class DataService {
   constructor(
     private apiService: ApiService,
-    private jobService: JobService
+    private jobService: JobService,
+    private candidateService: CandidateService
   ) {
     this.loadCandidates();
     this.loadJobs();
@@ -31,7 +34,7 @@ export class DataService {
 
   inviteCandidate(candidate: Candidate, jobTitle: string) {
     if (!candidate.id) return Promise.reject('No ID');
-    return firstValueFrom(this.apiService.inviteCandidate(candidate.id, jobTitle));
+    return firstValueFrom(this.candidateService.inviteCandidate(candidate.id, jobTitle));
   }
 
   getAnalytics() {
@@ -40,7 +43,7 @@ export class DataService {
 
   async loadCandidates() {
     try {
-      const data = await firstValueFrom(this.apiService.getCandidates());
+      const data = await firstValueFrom(this.candidateService.getCandidates());
       // Map backend structure and assign
       // We map _id to id to ensure compatibility with frontend components and Gemini service
       this.candidates = (data as any[]).map(c => {
