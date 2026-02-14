@@ -1,6 +1,7 @@
 
 import { comparePassword, hashPassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
+import crypto from 'crypto';
 import { userRepository, UserRepository } from '../repositories/user.repository';
 import { institutionRepository, InstitutionRepository } from '../repositories/institution.repository';
 import { userFactory, UserFactory } from './user-factory.service';
@@ -268,7 +269,8 @@ export class AuthService {
         }
 
         // Generate 6 digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        // Generate 6 digit code (Cryptographically Secure)
+        const code = crypto.randomInt(100000, 1000000).toString();
         const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
         await this.userRepo.update(user._id.toString(), {

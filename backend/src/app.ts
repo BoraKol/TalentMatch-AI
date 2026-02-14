@@ -20,6 +20,11 @@ app.use(cors({
 app.use(cookieParser());
 app.use(mongoSanitize());
 
+// Swagger UI
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Rate Limiting
 app.use('/api/', apiRateLimiter);
 app.use('/api/auth/', authRateLimiter);

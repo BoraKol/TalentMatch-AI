@@ -4,7 +4,70 @@ import { inviteController } from '../controllers/admin-invite.controller';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: User Login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', authController.login.bind(authController));
+
+/**
+ * @swagger
+ * /auth/register/candidate:
+ *   post:
+ *     summary: Register a new Candidate
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, firstName, lastName]
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Candidate registered successfully
+ *       400:
+ *         description: Validation error
+ */
 router.post('/register/candidate', authController.registerCandidate.bind(authController));
 router.post('/register/employer', authController.registerEmployer.bind(authController));
 router.post('/register/institution', authController.registerInstitution.bind(authController));

@@ -1,15 +1,18 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { ToastService } from '../../services/toast.service';
+import { ConfirmationModalComponent } from '../shared/confirmation-modal.component';
+import { AdminService } from '../../services/admin.service';
 
 @Component({
-    selector: 'app-admin-approvals',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'app-admin-approvals',
+  standalone: true,
+  imports: [CommonModule, ConfirmationModalComponent],
+  template: `
     <div class="space-y-8">
+      <app-confirmation-modal></app-confirmation-modal>
       <div>
         <h1 class="text-2xl font-bold text-slate-800">Registration Approvals</h1>
         <p class="text-slate-500 mt-1">Manage pending Employer and Institution accounts</p>
@@ -100,55 +103,63 @@ import { ToastService } from '../../services/toast.service';
   `
 })
 export class AdminApprovalsComponent implements OnInit {
-    private http = inject(HttpClient);
-    private toast = inject(ToastService);
+  @ViewChild(ConfirmationModalComponent) confirmationModal!: ConfirmationModalComponent;
+  private adminService = inject(AdminService);
+  private toast = inject(ToastService);
 
-    institutions = signal<any[]>([]);
-    employers = signal<any[]>([]);
+  institutions = signal<any[]>([]);
+  employers = signal<any[]>([]);
 
-    ngOnInit() {
+  ngOnInit() {
+    this.fetchPending();
+  }
+
+  fetchPending() {
+    this.adminService.getPendingValidations().subscribe({
+      next: (data) => {
+        this.institutions.set(data.institutions);
+        this.employers.set(data.employers);
+      },
+      error: (err) => this.toast.show('Failed to load pending queue', 'error')
+    });
+  }
+
+  approveInstitution(id: string) {
+    this.adminService.approveInstitution(id).subscribe({
+      next: () => {
+        this.toast.show('Institution and Admin approved', 'success');
         this.fetchPending();
-    }
+      },
+      error: (err) => this.toast.show('Approval failed', 'error')
+    });
+  }
 
-    fetchPending() {
-        this.http.get<any>(`${environment.apiUrl}/admin/pending-validations`).subscribe({
-            next: (data) => {
-                this.institutions.set(data.institutions);
-                this.employers.set(data.employers);
-            },
-            error: (err) => this.toast.show('Failed to load pending queue', 'error')
-        });
-    }
+  approveEmployer(id: string) {
+    this.adminService.approveEmployer(id).subscribe({
+      next: () => {
+        this.toast.show('Employer approved', 'success');
+        this.fetchPending();
+      },
+      error: (err) => this.toast.show('Approval failed', 'error')
+    });
+  }
 
-    approveInstitution(id: string) {
-        this.http.post(`${environment.apiUrl}/admin/approve-institution/${id}`, {}).subscribe({
-            next: () => {
-                this.toast.show('Institution and Admin approved', 'success');
-                this.fetchPending();
-            },
-            error: (err) => this.toast.show('Approval failed', 'error')
-        });
-    }
+  async reject(type: 'user' | 'institution', id: string) {
+    const confirmed = await this.confirmationModal.open({
+      title: 'Reject Request',
+      message: 'Are you sure you want to reject/suspend this request?',
+      confirmText: 'Reject',
+      cancelText: 'Cancel'
+    });
 
-    approveEmployer(id: string) {
-        this.http.post(`${environment.apiUrl}/admin/approve-employer/${id}`, {}).subscribe({
-            next: () => {
-                this.toast.show('Employer approved', 'success');
-                this.fetchPending();
-            },
-            error: (err) => this.toast.show('Approval failed', 'error')
-        });
+    if (confirmed) {
+      this.adminService.rejectValidation(type, id).subscribe({
+        next: () => {
+          this.toast.show('Validation rejected', 'info');
+          this.fetchPending();
+        },
+        error: (err) => this.toast.show('Action failed', 'error')
+      });
     }
-
-    reject(type: 'user' | 'institution', id: string) {
-        if (confirm('Are you sure you want to reject/suspend this request?')) {
-            this.http.post(`${environment.apiUrl}/admin/reject`, { type, id }).subscribe({
-                next: () => {
-                    this.toast.show('Validation rejected', 'info');
-                    this.fetchPending();
-                },
-                error: (err) => this.toast.show('Action failed', 'error')
-            });
-        }
-    }
+  }
 }
