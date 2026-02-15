@@ -12,16 +12,10 @@ import { environment } from '../../environments/environment';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-8">
+    <div class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 py-8 pt-4">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-          <a [routerLink]="dashboardLink()" class="inline-flex items-center text-sm text-slate-600 hover:text-emerald-600 mb-4">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Back to Dashboard
-          </a>
           <h1 class="text-3xl font-bold text-slate-800">Post a New Job</h1>
           <p class="text-slate-600 mt-2">Create a job listing and find the best candidates with AI</p>
         </div>
@@ -175,7 +169,7 @@ import { environment } from '../../environments/environment';
                   Post Job & Find Candidates with Weighted AI
                 }
               </button>
-              <button type="button" routerLink="/employer/dashboard"
+              <button type="button" [routerLink]="dashboardLink()"
                       class="px-6 py-4 rounded-xl border-2 border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition-all">
                 Cancel
               </button>
@@ -334,7 +328,12 @@ export class JobPostComponent {
 
       this.jobService.createJob(jobData).subscribe({
         next: (response) => {
-          this.router.navigate(['/employer/jobs', response._id, 'matches']);
+          // Navigate based on user role
+          const role = this.authService.currentUser()?.role;
+          const basePath = (role === 'institution_admin' || role === 'institution_user')
+            ? '/institution'
+            : '/employer';
+          this.router.navigate([basePath, 'jobs', response._id, 'matches']);
         },
         error: (err) => {
           this.isLoading.set(false);

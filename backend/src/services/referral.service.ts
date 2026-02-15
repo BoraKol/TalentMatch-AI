@@ -5,18 +5,26 @@ import { referralRepository } from '../repositories/referral.repository';
 import { jobRepository } from '../repositories/job.repository';
 import { aiMatchingService } from './ai-matching.service';
 import emailService from './email.service';
+import { AppError } from '../utils/app-error';
 import { CreateReferralSchema, RespondReferralSchema, UpdateReferralStatusSchema } from '../validators/referral.validator';
+
+/** Escapes special regex characters to prevent injection */
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 
 export class ReferralService {
 
     async getCandidatesForReferral(search?: string, institutionId?: string) {
         const query: any = {};
         if (search) {
+            const safeSearch = escapeRegex(search);
             query.$or = [
-                { firstName: { $regex: search, $options: 'i' } },
-                { lastName: { $regex: search, $options: 'i' } },
-                { currentTitle: { $regex: search, $options: 'i' } },
-                { skills: { $elemMatch: { $regex: search, $options: 'i' } } }
+                { firstName: { $regex: safeSearch, $options: 'i' } },
+                { lastName: { $regex: safeSearch, $options: 'i' } },
+                { currentTitle: { $regex: safeSearch, $options: 'i' } },
+                { skills: { $elemMatch: { $regex: safeSearch, $options: 'i' } } }
             ];
         }
 
@@ -111,7 +119,7 @@ export class ReferralService {
 
     async getMatchesForCandidate(candidateId: string) {
         const candidate = await candidateRepository.findOne(candidateId);
-        if (!candidate) throw new Error('Candidate not found');
+        if (!candidate) throw AppError.notFound('Candidate not found');
 
         const matches = await aiMatchingService.findTopJobsForCandidate(candidateId);
 
@@ -143,7 +151,7 @@ export class ReferralService {
         });
 
         if (existing) {
-            throw new Error('This candidate has already been referred to this job');
+            throw AppError.conflict('This candidate has already been referred to this job');
         }
 
         const referralData = {
@@ -177,7 +185,7 @@ export class ReferralService {
 
     async getMyReferrals(userId: string) {
         const candidate = await candidateRepository.findOneByFilter({ user: userId });
-        if (!candidate) throw new Error('Candidate profile not found');
+        if (!candidate) throw AppError.notFound('Candidate profile not found');
 
         return await referralRepository.findByCandidate(candidate._id.toString());
     }
@@ -187,7 +195,7 @@ export class ReferralService {
         await RespondReferralSchema.parseAsync({ action, message });
 
         const candidate = await candidateRepository.findOneByFilter({ user: userId });
-        if (!candidate) throw new Error('Candidate profile not found');
+        if (!candidate) throw AppError.notFound('Candidate profile not found');
 
         const referral = await referralRepository.findOneByFilter({
             _id: referralId,
@@ -195,7 +203,7 @@ export class ReferralService {
             status: 'pending'
         });
 
-        if (!referral) throw new Error('Referral not found or already responded');
+        if (!referral) throw AppError.notFound('Referral not found or already responded');
 
         return await referralRepository.update(referralId, {
             status: action as any,
@@ -214,7 +222,7 @@ export class ReferralService {
             updatedAt: new Date()
         });
 
-        if (!referral) throw new Error('Referral not found');
+        if (!referral) throw AppError.notFound('Referral not found');
 
         return referral;
     }

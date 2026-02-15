@@ -14,6 +14,15 @@ export interface User {
     institutionId?: string;
 }
 
+interface LoginCredentials {
+    email: string;
+    password: string;
+}
+
+interface AuthResponse {
+    user: User;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -26,8 +35,8 @@ export class AuthService {
 
     constructor(private http: HttpClient, private router: Router) { }
 
-    login(credentials: any) {
-        return this.http.post<any>(`${this.apiUrl}/login`, credentials).pipe(
+    login(credentials: LoginCredentials) {
+        return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
             tap(data => {
                 if (data?.user) {
                     this.setSession(data.user);
@@ -36,8 +45,8 @@ export class AuthService {
         );
     }
 
-    registerCandidate(data: any) {
-        return this.http.post<any>(`${this.apiUrl}/register/candidate`, data).pipe(
+    registerCandidate(data: Record<string, unknown>) {
+        return this.http.post<AuthResponse>(`${this.apiUrl}/register/candidate`, data).pipe(
             tap(data => {
                 if (data?.user) {
                     this.setSession(data.user);
@@ -47,11 +56,11 @@ export class AuthService {
     }
 
     forgotPassword(email: string) {
-        return this.http.post<any>(`${this.apiUrl}/forgot-password`, { email });
+        return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email });
     }
 
-    resetPassword(data: any) {
-        return this.http.post<any>(`${this.apiUrl}/reset-password`, data);
+    resetPassword(data: { email: string; code: string; newPassword: string }) {
+        return this.http.post<{ message: string }>(`${this.apiUrl}/reset-password`, data);
     }
 
     logout() {
@@ -66,7 +75,7 @@ export class AuthService {
         });
     }
 
-    private clearLocalSession() {
+    clearLocalSession() {
         localStorage.removeItem('user_session');
         this.currentUser.set(null);
         this.isAuthenticated.set(false);
@@ -88,3 +97,4 @@ export class AuthService {
         }
     }
 }
+

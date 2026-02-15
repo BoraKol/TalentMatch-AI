@@ -168,7 +168,7 @@ export class LoginComponent {
       this.isLoading.set(true);
       this.errorMessage.set('');
 
-      this.authService.login(this.loginForm.value).subscribe({
+      this.authService.login(this.loginForm.getRawValue()).subscribe({
         next: (res) => {
           this.isLoading.set(false);
           // Redirect based on role

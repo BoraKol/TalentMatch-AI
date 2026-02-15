@@ -2,27 +2,20 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/express';
 import { referralService } from '../services/referral.service';
-import User from '../models/user.model';
-import { ZodError } from 'zod';
+import { userRepository } from '../repositories/user.repository';
+import { AppError } from '../utils/app-error';
 
 class ReferralController {
-
-    private handleError(res: Response, error: any) {
-        if (error instanceof ZodError) {
-            return res.status(400).json({ error: 'Validation Error', details: error.errors });
-        }
-        res.status(500).json({ error: error.message });
-    }
 
     // Super Admin: Get all candidates for referral selection
     async getCandidatesForReferral(req: AuthRequest, res: Response) {
         try {
             const search = req.query.search as string;
             const user = req.user;
-            let institutionId = undefined;
+            let institutionId: string | undefined;
 
             if (user?.role === 'institution_admin' || user?.role === 'institution_user') {
-                const dbUser = await User.findById(user.id);
+                const dbUser = await userRepository.findOne(user.id);
                 if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
                 institutionId = dbUser.institution.toString();
             }
@@ -30,7 +23,8 @@ class ReferralController {
             const candidates = await referralService.getCandidatesForReferral(search, institutionId);
             res.json(candidates);
         } catch (error: any) {
-            this.handleError(res, error);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 
@@ -41,10 +35,8 @@ class ReferralController {
             const result = await referralService.getMatchesForCandidate(candidateId);
             res.json(result);
         } catch (error: any) {
-            if (error.message === 'Candidate not found') {
-                return res.status(404).json({ error: error.message });
-            }
-            this.handleError(res, error);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 
@@ -57,16 +49,11 @@ class ReferralController {
             const referral = await referralService.createReferral(userId, req.body);
             res.status(201).json(referral);
         } catch (error: any) {
-            if (error instanceof ZodError) {
-                return res.status(400).json({ error: 'Validation Error', details: error.errors });
-            }
             if (error.code === 11000 || error.message.includes('already been referred')) {
                 return res.status(409).json({ error: 'This candidate has already been referred to this job' });
             }
-            if (error.message === 'Candidate not found' || error.message === 'Job not found') {
-                return res.status(404).json({ error: error.message });
-            }
-            res.status(500).json({ error: error.message });
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 
@@ -75,10 +62,10 @@ class ReferralController {
         try {
             const status = req.query.status as string;
             const user = req.user;
-            let institutionId = undefined;
+            let institutionId: string | undefined;
 
             if (user?.role === 'institution_admin' || user?.role === 'institution_user') {
-                const dbUser = await User.findById(user.id);
+                const dbUser = await userRepository.findOne(user.id);
                 if (!dbUser?.institution) return res.status(403).json({ error: 'User not linked to institution' });
                 institutionId = dbUser.institution.toString();
             }
@@ -86,7 +73,8 @@ class ReferralController {
             const referrals = await referralService.getAllReferrals(status, institutionId);
             res.json(referrals);
         } catch (error: any) {
-            this.handleError(res, error);
+            const statusCode = error instanceof AppError ? error.statusCode : 500;
+            res.status(statusCode).json({ error: error.message });
         }
     }
 
@@ -99,10 +87,8 @@ class ReferralController {
             const referrals = await referralService.getMyReferrals(userId);
             res.json(referrals);
         } catch (error: any) {
-            if (error.message === 'Candidate profile not found') {
-                return res.status(404).json({ error: error.message });
-            }
-            this.handleError(res, error);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 
@@ -118,13 +104,8 @@ class ReferralController {
             const referral = await referralService.respondToReferral(userId, referralId, action, message);
             res.json(referral);
         } catch (error: any) {
-            if (error instanceof ZodError) {
-                return res.status(400).json({ error: 'Validation Error', details: error.errors });
-            }
-            if (error.message === 'Referral not found or already responded') {
-                return res.status(404).json({ error: error.message });
-            }
-            res.status(500).json({ error: error.message });
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 
@@ -137,23 +118,15 @@ class ReferralController {
             const referral = await referralService.updateReferralStatus(referralId, status, notes);
             res.json(referral);
         } catch (error: any) {
-            if (error instanceof ZodError) {
-                return res.status(400).json({ error: 'Validation Error', details: error.errors });
-            }
-            if (error.message.includes('Status must be one of')) {
-                return res.status(400).json({ error: error.message });
-            }
-            if (error.message === 'Referral not found') {
-                return res.status(404).json({ error: error.message });
-            }
-            res.status(500).json({ error: error.message });
+            const statusCode = error instanceof AppError ? error.statusCode : 500;
+            res.status(statusCode).json({ error: error.message });
         }
     }
 
     async autoMatch(req: AuthRequest, res: Response) {
         try {
             const userId = req.user?.id;
-            const user = await User.findById(userId);
+            const user = await userRepository.findOne(userId!);
 
             if (!user?.institution && user?.role !== 'super_admin') {
                 return res.status(403).json({ error: 'Only institution admins, users or super admins can trigger auto-match' });
@@ -168,15 +141,15 @@ class ReferralController {
                 return res.status(400).json({ error: 'No institution associated with your account' });
             }
 
-            // For super_admin, targetInstId can be undefined (implies global scan)
-            // autoMatchCandidates now handles optional institutionId
             const recommendations = await referralService.autoMatchCandidates(targetInstId);
             console.log(`Auto-match found ${recommendations.length} recommendations for inst: ${targetInstId || 'global'}`);
             res.json(recommendations);
         } catch (error: any) {
-            this.handleError(res, error);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message });
         }
     }
 }
 
 export const referralController = new ReferralController();
+

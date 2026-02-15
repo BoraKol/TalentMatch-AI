@@ -32,25 +32,6 @@ interface Job {
   imports: [CommonModule, RouterModule, EmptyStateComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
-      <!-- Header -->
-      <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
-            <div class="flex items-center gap-3">
-              <img src="/favicon.jpg" alt="TalentMatch Logo" class="w-10 h-10 rounded-xl object-cover shadow-sm">
-              <span class="font-bold text-xl text-slate-800">TalentMatch AI</span>
-              <span class="ml-2 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded">Employer</span>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="text-slate-600">{{ user()?.firstName }} {{ user()?.lastName }}</span>
-              <button (click)="logout()" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Welcome Card -->
         <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 mb-8 text-white shadow-xl shadow-emerald-500/20">

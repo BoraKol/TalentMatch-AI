@@ -3,6 +3,7 @@ import { jobRepository } from '../repositories/job.repository';
 import { candidateRepository } from '../repositories/candidate.repository';
 import { applicationRepository } from '../repositories/application.repository';
 import { savedJobRepository } from '../repositories/saved-job.repository';
+import { AppError } from '../utils/app-error';
 import { IJob } from '../models/job.model';
 import { IApplication } from '../models/application.model';
 
@@ -12,7 +13,7 @@ export class JobDiscoveryService {
         // Find candidate profile
         const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) {
-            throw new Error('Candidate profile not found. Please complete your profile first.');
+            throw AppError.notFound('Candidate profile not found. Please complete your profile first.');
         }
 
         // Query params
@@ -113,7 +114,7 @@ export class JobDiscoveryService {
     async getSkillGaps(userId: string) {
         const candidate = await candidateRepository.findOneByFilter({ user: userId });
         if (!candidate) {
-            throw new Error('Candidate profile not found');
+            throw AppError.notFound('Candidate profile not found');
         }
 
         // Get all active jobs and count skill frequency

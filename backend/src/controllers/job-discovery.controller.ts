@@ -2,6 +2,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/express';
 import { jobDiscoveryService } from '../services/job-discovery.service';
+import { AppError } from '../utils/app-error';
 
 export class JobDiscoveryController {
 
@@ -18,11 +19,8 @@ export class JobDiscoveryController {
             const result = await jobDiscoveryService.discoverJobs(userId, req.query);
             res.json(result);
         } catch (error: any) {
-            console.error('Job Discovery Error:', error);
-            if (error.message.includes('Candidate profile not found')) {
-                return res.status(404).json({ error: error.message });
-            }
-            res.status(500).json({ error: error.message || 'Failed to discover jobs' });
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message || 'Failed to discover jobs' });
         }
     }
 
@@ -39,13 +37,11 @@ export class JobDiscoveryController {
             const result = await jobDiscoveryService.getSkillGaps(userId);
             res.json(result);
         } catch (error: any) {
-            console.error('Skill Gap Error:', error);
-            if (error.message === 'Candidate profile not found') {
-                return res.status(404).json({ error: error.message });
-            }
-            res.status(500).json({ error: error.message || 'Failed to analyze skill gaps' });
+            const status = error instanceof AppError ? error.statusCode : 500;
+            res.status(status).json({ error: error.message || 'Failed to analyze skill gaps' });
         }
     }
 }
 
 export const jobDiscoveryController = new JobDiscoveryController();
+

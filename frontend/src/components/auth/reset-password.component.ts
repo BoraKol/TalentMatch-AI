@@ -7,10 +7,10 @@ import { AuthService } from '../../services/auth.service';
 import { LoginHeroComponent } from './login-hero.component';
 
 @Component({
-    selector: 'app-reset-password',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule, RouterModule, LoginHeroComponent],
-    template: `
+  selector: 'app-reset-password',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, LoginHeroComponent],
+  template: `
     <div class="min-h-screen bg-white flex flex-col md:flex-row">
       <!-- Right Side (Hero) -->
       <div class="w-full md:w-1/2 min-h-[200px] md:h-auto order-1 md:order-2 bg-slate-900 relative hidden md:block">
@@ -100,54 +100,54 @@ import { LoginHeroComponent } from './login-hero.component';
   `
 })
 export class ResetPasswordComponent implements OnInit {
-    private fb = inject(FormBuilder);
-    private authService = inject(AuthService);
-    private router = inject(Router);
-    private route = inject(ActivatedRoute);
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
-    resetForm = this.fb.group({
-        email: ['', [Validators.required, Validators.email]],
-        code: ['', Validators.required],
-        newPassword: ['', [Validators.required, Validators.minLength(8)]]
+  resetForm = this.fb.group({
+    email: ['', [Validators.required, Validators.email]],
+    code: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.minLength(8)]]
+  });
+
+  isLoading = signal(false);
+  message = signal('');
+  errorMessage = signal('');
+  showPassword = signal(false);
+
+  ngOnInit() {
+    // Get email from query params
+    this.route.queryParams.subscribe(params => {
+      if (params['email']) {
+        this.resetForm.patchValue({ email: params['email'] });
+      }
     });
+  }
 
-    isLoading = signal(false);
-    message = signal('');
-    errorMessage = signal('');
-    showPassword = signal(false);
+  togglePasswordVisibility() {
+    this.showPassword.update(value => !value);
+  }
 
-    ngOnInit() {
-        // Get email from query params
-        this.route.queryParams.subscribe(params => {
-            if (params['email']) {
-                this.resetForm.patchValue({ email: params['email'] });
-            }
-        });
-    }
+  onSubmit() {
+    if (this.resetForm.valid) {
+      this.isLoading.set(true);
+      this.message.set('');
+      this.errorMessage.set('');
 
-    togglePasswordVisibility() {
-        this.showPassword.update(value => !value);
-    }
-
-    onSubmit() {
-        if (this.resetForm.valid) {
-            this.isLoading.set(true);
-            this.message.set('');
-            this.errorMessage.set('');
-
-            this.authService.resetPassword(this.resetForm.value).subscribe({
-                next: (res) => {
-                    this.isLoading.set(false);
-                    this.message.set('Password reset successfully! Redirecting to login...');
-                    setTimeout(() => {
-                        this.router.navigate(['/login']);
-                    }, 2000);
-                },
-                error: (err) => {
-                    this.isLoading.set(false);
-                    this.errorMessage.set(err.error?.message || 'Failed to reset password. Please check your code.');
-                }
-            });
+      this.authService.resetPassword(this.resetForm.getRawValue()).subscribe({
+        next: (res) => {
+          this.isLoading.set(false);
+          this.message.set('Password reset successfully! Redirecting to login...');
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 2000);
+        },
+        error: (err) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(err.error?.message || 'Failed to reset password. Please check your code.');
         }
+      });
     }
+  }
 }

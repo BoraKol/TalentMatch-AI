@@ -1,18 +1,36 @@
 import { MatchingStrategy, MatchResult, JobMatch, CandidateMatch } from './matching.strategy';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import Job from '../../models/job.model';
-import Candidate from '../../models/candidate.model';
+import { GoogleGenAI } from '@google/genai';
+import { candidateRepository } from '../../repositories/candidate.repository';
+import { jobRepository } from '../../repositories/job.repository';
 import AppSetting from '../../models/app-setting.model';
 import { config } from '../../config';
+import logger from '../../utils/logger';
 
 export class GeminiMatchingStrategy implements MatchingStrategy {
-    private genAI: GoogleGenerativeAI | null = null;
+    private client: GoogleGenAI | null = null;
     private cache: Map<string, { result: MatchResult; timestamp: number }> = new Map();
     private CACHE_TTL = 30 * 60 * 1000; // 30 minutes cache
+    private MAX_CACHE_SIZE = 100; // Prevent unbounded memory growth
 
     constructor() {
         if (config.geminiApiKey) {
-            this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
+            this.client = new GoogleGenAI({ apiKey: config.geminiApiKey });
+        }
+    }
+
+    /** Evicts expired entries and enforces size limit (LRU-style) */
+    private evictCache(): void {
+        const now = Date.now();
+        // Remove expired entries
+        for (const [key, value] of this.cache) {
+            if (now - value.timestamp > this.CACHE_TTL) {
+                this.cache.delete(key);
+            }
+        }
+        // If still over limit, remove oldest entries
+        while (this.cache.size > this.MAX_CACHE_SIZE) {
+            const oldestKey = this.cache.keys().next().value;
+            if (oldestKey) this.cache.delete(oldestKey);
         }
     }
 
@@ -25,14 +43,11 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
             }
         }
 
-        const job = await Job.findById(jobId);
+        const job = await jobRepository.findOne(jobId);
         if (!job) throw new Error('Job not found');
 
-        // Fetch limited candidates + settings
-        const candidates = await Candidate.find({ status: { $ne: 'rejected' } })
-            .select('firstName lastName email skills experience school department bio')
-            .lean();
-        // Optimization: In real app, we should limit this or pre-filter by skills
+        // Fetch limited candidates + settings via repository
+        const candidates = await candidateRepository.find({ status: { $ne: 'rejected' } });
 
         if (candidates.length === 0) {
             return { job: { id: job._id.toString(), title: job.title, company: job.company }, matches: [], analyzedAt: new Date() };
@@ -51,19 +66,20 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
                 analyzedAt: new Date()
             };
 
+            this.evictCache();
             this.cache.set(jobId, { result, timestamp: Date.now() });
             return result;
         } catch (error) {
-            console.error('Gemini Match Error', error);
-            throw error; // Re-throw to allow fallback
+            logger.error('Gemini Match Error', { error });
+            throw error;
         }
     }
 
     async matchCandidateToJobs(candidateId: string): Promise<JobMatch[]> {
-        const candidate = await Candidate.findById(candidateId);
+        const candidate = await candidateRepository.findOne(candidateId);
         if (!candidate) return [];
 
-        const jobs = await Job.find().lean();
+        const jobs = await jobRepository.find({});
         if (jobs.length === 0) return [];
 
         const settings = await this.getAlgorithmSettings();
@@ -73,22 +89,27 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
             const aiMatches = await this.callGemini(prompt);
             return this.enrichJobMatches(aiMatches, jobs).slice(0, 3);
         } catch (error) {
-            console.error('Gemini Candidate Match Error', error);
-            throw error; // Re-throw to allow fallback in service
+            logger.error('Gemini Candidate Match Error', { error });
+            throw error;
         }
     }
 
     private async callGemini(prompt: string): Promise<any[]> {
-        if (!this.genAI) throw new Error('Gemini API not configured');
+        if (!this.client) throw new Error('Gemini API not configured');
 
-        const model = this.genAI.getGenerativeModel({
+        const response = await this.client.models.generateContent({
             model: 'gemini-2.0-flash',
-            generationConfig: { temperature: 0, topP: 1, topK: 1, maxOutputTokens: 2048 }
+            contents: prompt,
+            config: {
+                temperature: 0,
+                topP: 1,
+                topK: 1,
+                maxOutputTokens: 2048
+            }
         });
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
+        const text = response.text;
+        if (!text) return [];
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
     }
@@ -106,7 +127,6 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
     }
 
     private buildJobMatchPrompt(job: any, candidates: any[], settings: any): string {
-        // ... (Same prompt logic as before, but cleaned up)
         return `
             You are an AI Talent Matcher.
             Priorities: Skill=${settings['primary_skills'] || 10}, Exp=${settings['secondary_skills'] || 5}.
@@ -184,3 +204,4 @@ export class GeminiMatchingStrategy implements MatchingStrategy {
         }).filter(Boolean) as JobMatch[];
     }
 }
+

@@ -12,24 +12,6 @@ import { environment } from '../../environments/environment';
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
-      <!-- Navbar -->
-      <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between h-16">
-            <div class="flex items-center gap-8">
-              <a routerLink="/institution/dashboard" class="flex items-center gap-2">
-<img src="/favicon.jpg" alt="TalentMatch AI" class="w-8 h-8 rounded-lg object-cover">
-                <span class="text-xl font-bold text-slate-800">TalentMatch AI</span>
-                <span class="ml-2 px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">Institution</span>
-              </a>
-            </div>
-            <div class="flex items-center gap-4">
-              <a routerLink="/institution/dashboard" class="text-sm text-slate-600 hover:text-indigo-600">← Back to Dashboard</a>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <!-- Main Content -->
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Header & Search -->

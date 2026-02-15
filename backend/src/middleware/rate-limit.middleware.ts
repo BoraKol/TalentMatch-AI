@@ -1,19 +1,33 @@
 import rateLimit from 'express-rate-limit';
 
+// Auth endpoints: strict limit to prevent brute-force
 export const authRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 10, // 10 attempts per 15 minutes (login, register)
     message: {
         success: false,
-        error: 'Too many requests from this IP, please try again after 15 minutes'
+        error: 'Too many authentication attempts. Please try again after 15 minutes.'
     },
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 
+// Password reset: very strict to prevent code enumeration
+export const passwordResetLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 3, // 3 attempts per 15 minutes
+    message: {
+        success: false,
+        error: 'Too many password reset attempts. Please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// General API: moderate limit
 export const apiRateLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    max: 300, // Limit each IP to 300 requests per minute
+    max: 300,
     message: {
         success: false,
         error: 'Too many requests, please slow down.'

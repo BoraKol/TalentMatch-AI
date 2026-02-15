@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { inviteController } from '../controllers/admin-invite.controller';
+import { passwordResetLimiter } from '../middleware/rate-limit.middleware';
 
 const router = Router();
 
@@ -72,8 +73,8 @@ router.post('/register/candidate', authController.registerCandidate.bind(authCon
 router.post('/register/employer', authController.registerEmployer.bind(authController));
 router.post('/register/institution', authController.registerInstitution.bind(authController));
 router.post('/set-password', authController.setPassword.bind(authController));
-router.post('/forgot-password', authController.forgotPassword.bind(authController));
-router.post('/reset-password', authController.resetPassword.bind(authController));
+router.post('/forgot-password', passwordResetLimiter, authController.forgotPassword.bind(authController));
+router.post('/reset-password', passwordResetLimiter, authController.resetPassword.bind(authController));
 router.post('/logout', authController.logout.bind(authController));
 
 // Public invitation routes

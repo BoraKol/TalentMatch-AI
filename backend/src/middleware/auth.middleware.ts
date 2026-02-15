@@ -4,8 +4,7 @@ import { config } from '../config';
 import { AuthRequest, AuthUser } from '../types/express';
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-    // @ts-ignore
-    const token = (req as any).cookies?.token;
+    const token = req.cookies?.token;
 
     if (!token) {
         return res.status(401).json({ error: 'No token provided' });

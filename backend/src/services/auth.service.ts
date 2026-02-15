@@ -1,6 +1,7 @@
 
 import { comparePassword, hashPassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
+import { AppError } from '../utils/app-error';
 import crypto from 'crypto';
 import { userRepository, UserRepository } from '../repositories/user.repository';
 import { institutionRepository, InstitutionRepository } from '../repositories/institution.repository';
@@ -33,22 +34,20 @@ export class AuthService {
 
         const user = await this.userRepo.findByEmail(email);
         if (!user) {
-            throw new Error('Invalid credentials');
+            throw AppError.unauthorized('Invalid credentials');
         }
 
         if (!user.isActive) {
-            const error = new Error('Your account is pending Super Admin approval. Please check back later.');
-            (error as any).statusCode = 403;
-            throw error;
+            throw AppError.forbidden('Your account is pending Super Admin approval. Please check back later.');
         }
 
         const isMatch = await comparePassword(password || '', user.password || '');
         if (!isMatch) {
-            throw new Error('Invalid credentials');
+            throw AppError.unauthorized('Invalid credentials');
         }
 
         const token = generateToken({
-            id: user._id,
+            id: user._id.toString(),
             email: user.email,
             role: user.role
         });
@@ -76,7 +75,7 @@ export class AuthService {
 
         const existing = await this.userRepo.findByEmail(email);
         if (existing) {
-            throw new Error('Email already exists');
+            throw AppError.conflict('Email already exists');
         }
 
         const user = await this.factory.createUser({
@@ -89,7 +88,7 @@ export class AuthService {
         });
 
         const token = generateToken({
-            id: user._id,
+            id: user._id.toString(),
             email: user.email,
             role: user.role
         });
@@ -113,20 +112,20 @@ export class AuthService {
 
         const institution = await this.institutionRepo.findOne(institutionId);
         if (!institution) {
-            throw new Error('Selected institution not found.');
+            throw AppError.notFound('Selected institution not found.');
         }
         if (institution.status !== 'active') {
-            throw new Error('Selected institution is not active.');
+            throw AppError.forbidden('Selected institution is not active.');
         }
 
         const existing = await this.userRepo.findByEmail(email);
         if (existing) {
-            throw new Error('Email already exists');
+            throw AppError.conflict('Email already exists');
         }
 
         const userCount = await this.userRepo.count({ institution: institution._id });
         if (userCount >= (institution.maxUsers || 5)) {
-            throw new Error(`Institution has reached maximum user limit (${institution.maxUsers || 5})`);
+            throw AppError.forbidden(`Institution has reached maximum user limit (${institution.maxUsers || 5})`);
         }
 
         const user = await this.factory.createUser({
@@ -140,7 +139,7 @@ export class AuthService {
         });
 
         const token = generateToken({
-            id: user._id,
+            id: user._id.toString(),
             email: user.email,
             role: user.role
         });
@@ -165,22 +164,22 @@ export class AuthService {
         const { email, password, firstName, lastName, institutionName, institutionType, emailDomain, website } = validated;
 
         if (config.publicEmailDomains.includes(emailDomain.toLowerCase())) {
-            throw new Error('Public email domains cannot be used for institution registration.');
+            throw AppError.badRequest('Public email domains cannot be used for institution registration.');
         }
 
         const adminEmailDomain = email.split('@')[1];
         if (adminEmailDomain.toLowerCase() !== emailDomain.toLowerCase()) {
-            throw new Error(`Your email domain (${adminEmailDomain}) must match the institution's domain (${emailDomain}).`);
+            throw AppError.badRequest(`Your email domain (${adminEmailDomain}) must match the institution's domain (${emailDomain}).`);
         }
 
         const existingUser = await this.userRepo.findByEmail(email);
         if (existingUser) {
-            throw new Error('Email already exists');
+            throw AppError.conflict('Email already exists');
         }
 
         const existingInstitution = await this.institutionRepo.findByEmailDomain(emailDomain);
         if (existingInstitution) {
-            throw new Error('An institution with this email domain already exists.');
+            throw AppError.conflict('An institution with this email domain already exists.');
         }
 
         const institution = await this.institutionRepo.create({
@@ -222,16 +221,12 @@ export class AuthService {
         });
 
         if (!invite) {
-            const error = new Error('Invalid or expired invite token');
-            (error as any).statusCode = 403;
-            throw error;
+            throw AppError.forbidden('Invalid or expired invite token');
         }
 
         const user = await this.userRepo.findByEmail(email);
         if (!user) {
-            const error = new Error('User not found');
-            (error as any).statusCode = 404;
-            throw error;
+            throw AppError.notFound('User not found');
         }
 
         user.password = await hashPassword(password);
@@ -242,7 +237,7 @@ export class AuthService {
         await invite.save();
 
         const token = generateToken({
-            id: user._id,
+            id: user._id.toString(),
             email: user.email,
             role: user.role
         });
@@ -268,7 +263,6 @@ export class AuthService {
             return;
         }
 
-        // Generate 6 digit code
         // Generate 6 digit code (Cryptographically Secure)
         const code = crypto.randomInt(100000, 1000000).toString();
         const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
@@ -292,7 +286,7 @@ export class AuthService {
     }
 
     // Reset Password: Validate code and set new password
-    async resetPassword(data: any) {
+    async resetPassword(data: { email: string; code: string; newPassword: string }) {
         const { email, code, newPassword } = data;
 
         const user = await this.userRepo.findByEmail(email);
@@ -301,7 +295,7 @@ export class AuthService {
             user.resetPasswordToken !== code ||
             !user.resetPasswordExpires ||
             user.resetPasswordExpires < new Date()) {
-            throw new Error('Invalid or expired verification code');
+            throw AppError.badRequest('Invalid or expired verification code');
         }
 
         const hashedPassword = await hashPassword(newPassword);
@@ -318,3 +312,4 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
+

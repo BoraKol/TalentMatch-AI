@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { authService, AuthService } from '../services/auth.service';
 import { BaseController } from './base.controller';
+import { AppError } from '../utils/app-error';
 
 export class AuthController extends BaseController {
     private authService: AuthService;
@@ -11,23 +12,25 @@ export class AuthController extends BaseController {
         this.authService = authService;
     }
 
+    /** Centralized cookie setter — eliminates 4x duplication */
+    private setCookieToken(res: Response, token: string): void {
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 24 * 60 * 60 * 1000 // 1 day
+        });
+    }
+
     // Login for all roles
     async login(req: Request, res: Response): Promise<void> {
         try {
             const { email, password } = req.body;
             const result = await this.authService.login(email, password);
-
-            // Set cookie
-            res.cookie('token', result.token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 1 day
-            });
-
+            this.setCookieToken(res, result.token);
             this.sendSuccess(res, { user: result.user }, 'Login successful');
         } catch (error: any) {
-            const status = error.statusCode || 401;
+            const status = error instanceof AppError ? error.statusCode : 401;
             this.sendError(res, error.message, status);
         }
     }
@@ -36,18 +39,11 @@ export class AuthController extends BaseController {
     async registerCandidate(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.authService.registerCandidate(req.body);
-
-            // Set cookie
-            res.cookie('token', result.token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 1 day
-            });
-
+            this.setCookieToken(res, result.token);
             this.sendSuccess(res, { user: result.user }, 'Candidate registered successfully', 201);
         } catch (error: any) {
-            this.sendError(res, error.message);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            this.sendError(res, error.message, status);
         }
     }
 
@@ -57,7 +53,8 @@ export class AuthController extends BaseController {
             const result = await this.authService.registerEmployer(req.body);
             this.sendSuccess(res, result, 'Employer registered successfully', 201);
         } catch (error: any) {
-            this.sendError(res, error.message);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            this.sendError(res, error.message, status);
         }
     }
 
@@ -67,7 +64,8 @@ export class AuthController extends BaseController {
             const result = await this.authService.registerInstitution(req.body);
             this.sendSuccess(res, result, 'Institution registered successfully', 201);
         } catch (error: any) {
-            this.sendError(res, error.message);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            this.sendError(res, error.message, status);
         }
     }
 
@@ -75,18 +73,11 @@ export class AuthController extends BaseController {
     async setPassword(req: Request, res: Response): Promise<void> {
         try {
             const result = await this.authService.setPassword(req.body);
-
-            // Set cookie
-            res.cookie('token', result.token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 24 * 60 * 60 * 1000 // 1 day
-            });
-
+            this.setCookieToken(res, result.token);
             this.sendSuccess(res, { user: result.user }, 'Password set successfully');
         } catch (error: any) {
-            this.sendError(res, error.message);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            this.sendError(res, error.message, status);
         }
     }
 
@@ -113,9 +104,11 @@ export class AuthController extends BaseController {
             const result = await this.authService.resetPassword(req.body);
             this.sendSuccess(res, null, result.message);
         } catch (error: any) {
-            this.sendError(res, error.message);
+            const status = error instanceof AppError ? error.statusCode : 500;
+            this.sendError(res, error.message, status);
         }
     }
 }
 
 export const authController = new AuthController();
+
